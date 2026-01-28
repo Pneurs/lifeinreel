@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   Moon, 
@@ -8,6 +9,7 @@ import {
   ChevronRight,
   Crown
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { Switch } from '@/components/ui/switch';
@@ -56,6 +58,16 @@ const Profile: React.FC = () => {
   const [dailyReminder, setDailyReminder] = React.useState(true);
   const [weeklyReminder, setWeeklyReminder] = React.useState(true);
   const [darkMode, setDarkMode] = React.useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <>
@@ -63,10 +75,10 @@ const Profile: React.FC = () => {
         {/* Profile header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary-foreground">M</span>
+            <span className="text-2xl font-bold text-primary-foreground">{initials}</span>
           </div>
-          <h1 className="text-xl font-bold text-foreground">Mom</h1>
-          <p className="text-sm text-muted-foreground">2 active journeys</p>
+          <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
+          <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
 
         {/* Premium banner */}
@@ -158,6 +170,7 @@ const Profile: React.FC = () => {
               <SettingItem
                 icon={LogOut}
                 label="Sign out"
+                onClick={handleSignOut}
                 danger
               />
             </div>

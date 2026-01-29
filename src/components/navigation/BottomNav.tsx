@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { icon: Home, label: 'Home', path: '/home' },
   { icon: Calendar, label: 'Timeline', path: '/timeline' },
-  { icon: Plus, label: 'Record', path: '/record', isMain: true },
   { icon: User, label: 'Profile', path: '/profile' },
+  { icon: Plus, label: 'Record', path: '/record', isMain: true },
 ];
 
 export const BottomNav: React.FC = () => {

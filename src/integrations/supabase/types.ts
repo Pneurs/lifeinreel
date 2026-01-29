@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      journeys: {
+        Row: {
+          clip_count: number
+          created_at: string
+          date_of_birth: string | null
+          description: string | null
+          id: string
+          last_capture_date: string | null
+          name: string
+          photo: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clip_count?: number
+          created_at?: string
+          date_of_birth?: string | null
+          description?: string | null
+          id?: string
+          last_capture_date?: string | null
+          name: string
+          photo?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clip_count?: number
+          created_at?: string
+          date_of_birth?: string | null
+          description?: string | null
+          id?: string
+          last_capture_date?: string | null
+          name?: string
+          photo?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

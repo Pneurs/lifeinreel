@@ -1,69 +1,129 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Video, Check, RotateCcw } from 'lucide-react';
+import { X, Check, RotateCcw, AlertCircle } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
+import { useVideoRecording } from '@/hooks/useVideoRecording';
+import { toast } from 'sonner';
 
 const Record: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const journeyId = searchParams.get('journey');
-  
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [hasRecorded, setHasRecorded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
+  const {
+    isRecording,
+    recordingTime,
+    hasRecorded,
+    previewUrl,
+    isSaving,
+    error,
+    cameraReady,
+    stream,
+    minDuration,
+    maxDuration,
+    initCamera,
+    stopCamera,
+    startRecording,
+    stopRecording,
+    retake,
+    saveRecording,
+  } = useVideoRecording({ journeyId, maxDuration: 2, minDuration: 1 });
+
+  // Initialize camera on mount
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingTime((prev) => {
-          if (prev >= 2) {
-            setIsRecording(false);
-            setHasRecorded(true);
-            return prev;
-          }
-          return prev + 0.1;
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording]);
+    initCamera();
+    return () => stopCamera();
+  }, []);
 
+  // Attach stream to video element
+  useEffect(() => {
+    if (videoRef.current && stream && !hasRecorded) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream, hasRecorded]);
+
+  // Handle touch/mouse events for recording
   const handleStartRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
-    setHasRecorded(false);
+    if (cameraReady && !hasRecorded) {
+      startRecording();
+    }
   };
 
   const handleStopRecording = () => {
-    if (recordingTime >= 1) {
-      setIsRecording(false);
-      setHasRecorded(true);
+    if (recordingTime >= minDuration) {
+      stopRecording();
     }
   };
 
-  const handleRetake = () => {
-    setHasRecorded(false);
-    setRecordingTime(0);
+  const handleSave = async () => {
+    const success = await saveRecording();
+    if (success) {
+      toast.success('Clip saved!');
+      navigate(journeyId ? `/journey/${journeyId}` : '/home');
+    } else {
+      toast.error(error || 'Failed to save');
+    }
   };
 
-  const handleSave = () => {
-    // In a real app, this would save the video
-    navigate(journeyId ? `/journey/${journeyId}` : '/home');
+  const handleClose = () => {
+    stopCamera();
+    navigate(-1);
   };
 
   return (
     <div className="min-h-screen max-w-md mx-auto bg-foreground relative overflow-hidden">
-      {/* Camera preview placeholder */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 to-foreground flex items-center justify-center">
-        <Video className="w-24 h-24 text-muted/20" />
+      {/* Camera preview or recorded video */}
+      <div className="absolute inset-0 bg-black">
+        {!hasRecorded ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        ) : previewUrl ? (
+          <video
+            ref={previewVideoRef}
+            src={previewUrl}
+            autoPlay
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        ) : null}
+
+        {/* Loading state for camera */}
+        {!cameraReady && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-accent text-sm">Accessing camera...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && !hasRecorded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="text-center px-8">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <p className="text-accent text-sm mb-4">{error}</p>
+              <IOSButton variant="primary" onClick={initCamera}>
+                Try Again
+              </IOSButton>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 pt-12 px-6 flex items-center justify-between z-10">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleClose}
           className="w-10 h-10 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center"
         >
           <X className="w-5 h-5 text-accent" />
@@ -96,14 +156,14 @@ const Record: React.FC = () => {
           <div
             className={cn(
               "h-full transition-all duration-100",
-              recordingTime >= 1 ? "bg-primary" : "bg-destructive"
+              recordingTime >= minDuration ? "bg-primary" : "bg-destructive"
             )}
-            style={{ width: `${Math.min(recordingTime / 2, 1) * 100}%` }}
+            style={{ width: `${Math.min(recordingTime / maxDuration, 1) * 100}%` }}
           />
         </div>
         <div className="flex justify-between mt-2 text-xs text-accent/60">
-          <span>1s min</span>
-          <span>2s max</span>
+          <span>{minDuration}s min</span>
+          <span>{maxDuration}s max</span>
         </div>
       </div>
 
@@ -116,11 +176,15 @@ const Record: React.FC = () => {
               onTouchEnd={handleStopRecording}
               onMouseDown={handleStartRecording}
               onMouseUp={handleStopRecording}
+              onMouseLeave={() => isRecording && handleStopRecording()}
+              disabled={!cameraReady}
               className={cn(
                 "w-20 h-20 rounded-full border-4 transition-all duration-200",
                 isRecording
                   ? "border-destructive bg-destructive scale-90"
-                  : "border-accent bg-accent/20"
+                  : cameraReady 
+                    ? "border-accent bg-accent/20" 
+                    : "border-muted bg-muted/20 opacity-50"
               )}
             >
               <div className={cn(
@@ -134,7 +198,7 @@ const Record: React.FC = () => {
             <IOSButton
               variant="ghost"
               size="iconLg"
-              onClick={handleRetake}
+              onClick={retake}
               className="bg-background/20 backdrop-blur-sm"
             >
               <RotateCcw className="w-6 h-6 text-accent" />
@@ -143,14 +207,23 @@ const Record: React.FC = () => {
               variant="primary"
               size="iconLg"
               onClick={handleSave}
+              disabled={isSaving}
             >
-              <Check className="w-7 h-7" />
+              {isSaving ? (
+                <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Check className="w-7 h-7" />
+              )}
             </IOSButton>
           </div>
         )}
 
         <p className="text-center text-accent/60 text-sm mt-4">
-          {hasRecorded ? 'Save your moment or retake' : 'Hold to record'}
+          {hasRecorded 
+            ? 'Save your moment or retake' 
+            : cameraReady 
+              ? 'Hold to record' 
+              : 'Waiting for camera...'}
         </p>
       </div>
     </div>

@@ -15,7 +15,7 @@ const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { journeys } = useJourneys();
-  const { clips, toggleHighlight } = useJourneyClips(id || '');
+  const { clips, loading: clipsLoading, toggleHighlight } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
 
   const journey = journeys.find((j) => j.id === id);
@@ -94,18 +94,31 @@ const JourneyDetail: React.FC = () => {
         <div className="px-5 py-6 pb-32">
           {activeTab === 'timeline' && (
             <div className="space-y-6">
-              {Object.entries(clipsByDate).map(([date, dateClips]) => (
-                <div key={date}>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                    {format(parseISO(date), 'EEEE, MMM d')}
-                  </h3>
-                  <div className="flex gap-3 flex-wrap">
-                    {dateClips.map((clip) => (
-                      <ClipThumbnail key={clip.id} clip={clip} size="md" />
-                    ))}
-                  </div>
+              {clipsLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
-              ))}
+              ) : clips.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-4">No clips yet</p>
+                  <IOSButton variant="primary" onClick={() => navigate(`/record?journey=${id}`)}>
+                    Record your first clip
+                  </IOSButton>
+                </div>
+              ) : (
+                Object.entries(clipsByDate).map(([date, dateClips]) => (
+                  <div key={date}>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                      {format(parseISO(date), 'EEEE, MMM d')}
+                    </h3>
+                    <div className="flex gap-3 flex-wrap">
+                      {dateClips.map((clip) => (
+                        <ClipThumbnail key={clip.id} clip={clip} size="md" />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 

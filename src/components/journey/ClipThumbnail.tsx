@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { VideoClip } from '@/types/journey';
 import { Star, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 interface ClipThumbnailProps {
   clip: VideoClip;
   onSelect?: () => void;
+  onPlay?: () => void;
   selectable?: boolean;
   showDate?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -15,19 +16,32 @@ interface ClipThumbnailProps {
 export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
   clip,
   onSelect,
+  onPlay,
   selectable = false,
   showDate = false,
   size = 'md',
 }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  
   const sizeClasses = {
     sm: 'w-20 h-20',
     md: 'w-28 h-28',
     lg: 'w-full aspect-square',
   };
 
+  const handleClick = () => {
+    if (onPlay) {
+      onPlay();
+    } else if (onSelect) {
+      onSelect();
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   return (
     <button
-      onClick={onSelect}
+      onClick={handleClick}
       className={cn(
         'relative rounded-xl overflow-hidden bg-muted',
         sizeClasses[size],
@@ -35,15 +49,38 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
         clip.isHighlight ? 'ring-primary' : 'ring-transparent'
       )}
     >
-      {/* Placeholder gradient for demo */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
+      {/* Video element or poster */}
+      {clip.uri ? (
+        isPlaying ? (
+          <video
+            src={clip.uri}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onEnded={() => setIsPlaying(false)}
+          />
+        ) : (
+          <video
+            src={clip.uri}
+            className="absolute inset-0 w-full h-full object-cover"
+            muted
+            playsInline
+          />
+        )
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
+      )}
       
-      {/* Play indicator */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center">
-          <Play className="w-4 h-4 text-foreground ml-0.5" />
+      {/* Play indicator (hidden when playing) */}
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center">
+            <Play className="w-4 h-4 text-foreground ml-0.5" />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Highlight star */}
       {clip.isHighlight && (

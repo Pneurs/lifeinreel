@@ -29,20 +29,42 @@ export const useVideoRecording = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Initialize camera
+  // Initialize camera with iOS-compatible constraints
   const initCamera = useCallback(async () => {
     try {
       setError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true,
-      });
+      
+      // iOS-compatible constraints
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      };
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
       setCameraReady(true);
       return mediaStream;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Camera access error:', err);
-      setError('Camera access denied. Please allow camera permissions.');
+      
+      // More specific error messages for iOS
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Camera access denied. Please go to Settings > Safari > Camera and allow access.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('No camera found on this device.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setError('Camera is in use by another app. Please close other apps using the camera.');
+      } else {
+        setError('Unable to access camera. Please check permissions in Settings.');
+      }
+      
       setCameraReady(false);
       return null;
     }
@@ -82,11 +104,17 @@ export const useVideoRecording = ({
     }
 
     try {
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
-          ? 'video/webm;codecs=vp9' 
-          : 'video/webm'
-      });
+      // iOS Safari uses mp4, other browsers use webm
+      let mimeType = 'video/webm';
+      if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+        mimeType = 'video/webm;codecs=vp9';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+        mimeType = 'video/webm;codecs=vp8';
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -95,7 +123,7 @@ export const useVideoRecording = ({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         setRecordedBlob(blob);
         const url = URL.createObjectURL(blob);
         setPreviewUrl(url);
@@ -173,13 +201,18 @@ export const useVideoRecording = ({
     setError(null);
 
     try {
-      const fileName = `${user.id}/${journeyId}/${Date.now()}.webm`;
+      // Determine file extension based on blob type
+      const isMP4 = recordedBlob.type.includes('mp4');
+      const extension = isMP4 ? 'mp4' : 'webm';
+      const contentType = isMP4 ? 'video/mp4' : 'video/webm';
+      
+      const fileName = `${user.id}/${journeyId}/${Date.now()}.${extension}`;
       
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(fileName, recordedBlob, {
-          contentType: 'video/webm',
+          contentType,
           upsert: false
         });
 

@@ -4,10 +4,12 @@ import { ArrowLeft, Camera, Star, Play } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';
+import { ClipActions } from '@/components/journey/ClipActions';
 import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys, useJourneyClips } from '@/hooks/useJourneys';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 type TabType = 'timeline' | 'weekly' | 'monthly';
 
@@ -15,8 +17,18 @@ const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { journeys } = useJourneys();
-  const { clips, loading: clipsLoading, toggleHighlight } = useJourneyClips(id || '');
+  const { clips, loading: clipsLoading, toggleHighlight, deleteClip } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
+
+  const handleDeleteClip = async (clipId: string) => {
+    const success = await deleteClip(clipId);
+    if (success) {
+      toast.success('Clip deleted');
+    } else {
+      toast.error('Failed to delete clip');
+    }
+    return success;
+  };
 
   const journey = journeys.find((j) => j.id === id);
 
@@ -113,7 +125,9 @@ const JourneyDetail: React.FC = () => {
                     </h3>
                     <div className="flex gap-3 flex-wrap">
                       {dateClips.map((clip) => (
-                        <ClipThumbnail key={clip.id} clip={clip} size="md" />
+                        <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
+                          <ClipThumbnail clip={clip} size="md" />
+                        </ClipActions>
                       ))}
                     </div>
                   </div>
@@ -135,14 +149,15 @@ const JourneyDetail: React.FC = () => {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {weeklyClips.map((clip) => (
-                  <ClipThumbnail
-                    key={clip.id}
-                    clip={clip}
-                    size="lg"
-                    selectable
-                    onSelect={() => toggleHighlight(clip.id)}
-                    showDate
-                  />
+                  <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
+                    <ClipThumbnail
+                      clip={clip}
+                      size="lg"
+                      selectable
+                      onSelect={() => toggleHighlight(clip.id)}
+                      showDate
+                    />
+                  </ClipActions>
                 ))}
               </div>
               {highlightedClips.length > 0 && (
@@ -175,7 +190,9 @@ const JourneyDetail: React.FC = () => {
                 <h4 className="font-semibold text-foreground mb-3">Selected Highlights</h4>
                 <div className="grid grid-cols-4 gap-2">
                   {highlightedClips.map((clip) => (
-                    <ClipThumbnail key={clip.id} clip={clip} size="sm" />
+                    <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
+                      <ClipThumbnail clip={clip} size="sm" />
+                    </ClipActions>
                   ))}
                 </div>
               </div>

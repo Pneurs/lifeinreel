@@ -1,17 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Check, RotateCcw, AlertCircle } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';
+import { useJourneys } from '@/hooks/useJourneys';
+import { JourneySelector } from '@/components/record/JourneySelector';
 import { toast } from 'sonner';
 
 const Record: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const journeyId = searchParams.get('journey');
+  const initialJourneyId = searchParams.get('journey');
+  const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(initialJourneyId);
+  const [showJourneyPicker, setShowJourneyPicker] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+
+  const { journeys } = useJourneys();
 
   const {
     isRecording,
@@ -30,7 +36,7 @@ const Record: React.FC = () => {
     stopRecording,
     retake,
     saveRecording,
-  } = useVideoRecording({ journeyId, maxDuration: 2, minDuration: 1 });
+  } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 2, minDuration: 1 });
 
   // Initialize camera on mount
   useEffect(() => {
@@ -59,19 +65,43 @@ const Record: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // If no journey selected, show picker
+    if (!selectedJourneyId) {
+      setShowJourneyPicker(true);
+      return;
+    }
+
     const success = await saveRecording();
     if (success) {
       toast.success('Clip saved!');
-      navigate(journeyId ? `/journey/${journeyId}` : '/home');
+      navigate(`/journey/${selectedJourneyId}`);
     } else {
       toast.error(error || 'Failed to save');
     }
+  };
+
+  const handleJourneySelect = async (journeyId: string) => {
+    setSelectedJourneyId(journeyId);
+    setShowJourneyPicker(false);
+    
+    // Auto-save after selection
+    setTimeout(async () => {
+      const success = await saveRecording();
+      if (success) {
+        toast.success('Clip saved!');
+        navigate(`/journey/${journeyId}`);
+      } else {
+        toast.error('Failed to save');
+      }
+    }, 100);
   };
 
   const handleClose = () => {
     stopCamera();
     navigate(-1);
   };
+
+  const selectedJourney = journeys.find(j => j.id === selectedJourneyId);
 
   return (
     <div className="min-h-screen max-w-md mx-auto bg-foreground relative overflow-hidden">
@@ -142,9 +172,20 @@ const Record: React.FC = () => {
         <div className="w-10" />
       </div>
 
+      {/* Journey indicator */}
+      {selectedJourney && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-10">
+          <div className="bg-background/20 backdrop-blur-sm rounded-full px-4 py-2">
+            <span className="text-accent text-sm">
+              Saving to: {selectedJourney.name}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Recording indicator */}
       {isRecording && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        <div className="absolute top-40 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
           <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
           <span className="text-accent text-sm font-medium">Recording...</span>
         </div>
@@ -220,12 +261,24 @@ const Record: React.FC = () => {
 
         <p className="text-center text-accent/60 text-sm mt-4">
           {hasRecorded 
-            ? 'Save your moment or retake' 
+            ? selectedJourneyId 
+              ? 'Save your moment or retake'
+              : 'Tap save to choose a journey'
             : cameraReady 
               ? 'Hold to record' 
               : 'Waiting for camera...'}
         </p>
       </div>
+
+      {/* Journey Picker Modal */}
+      {showJourneyPicker && (
+        <JourneySelector
+          journeys={journeys}
+          selectedId={selectedJourneyId}
+          onSelect={handleJourneySelect}
+          onClose={() => setShowJourneyPicker(false)}
+        />
+      )}
     </div>
   );
 };

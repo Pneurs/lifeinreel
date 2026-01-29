@@ -80,6 +80,53 @@ export type Database = {
         }
         Relationships: []
       }
+      video_clips: {
+        Row: {
+          captured_at: string
+          created_at: string
+          duration: number
+          id: string
+          is_highlight: boolean
+          journey_id: string
+          thumbnail_url: string | null
+          user_id: string
+          video_url: string
+          week_number: number
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          duration: number
+          id?: string
+          is_highlight?: boolean
+          journey_id: string
+          thumbnail_url?: string | null
+          user_id: string
+          video_url: string
+          week_number: number
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          is_highlight?: boolean
+          journey_id?: string
+          thumbnail_url?: string | null
+          user_id?: string
+          video_url?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_clips_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

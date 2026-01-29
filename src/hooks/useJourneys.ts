@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Journey, VideoClip, JourneyType } from '@/types/journey';
@@ -81,23 +81,90 @@ export const useJourneys = () => {
   return { journeys, loading, addJourney, refetch: fetchJourneys };
 };
 
-// Mock clips for now - will be replaced with database later
-const mockClips: VideoClip[] = [];
-
 export const useJourneyClips = (journeyId: string) => {
   const [clips, setClips] = useState<VideoClip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
-  useEffect(() => {
-    setClips(mockClips.filter(c => c.journeyId === journeyId));
-  }, [journeyId]);
+  const fetchClips = useCallback(async () => {
+    if (!user || !journeyId) {
+      setClips([]);
+      setLoading(false);
+      return;
+    }
 
-  const toggleHighlight = (clipId: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('video_clips')
+      .select('*')
+      .eq('journey_id', journeyId)
+      .order('captured_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching clips:', error);
+    } else {
+      const mappedClips: VideoClip[] = (data || []).map((c) => ({
+        id: c.id,
+        journeyId: c.journey_id,
+        uri: c.video_url,
+        thumbnail: c.thumbnail_url || c.video_url,
+        capturedAt: c.captured_at,
+        duration: Number(c.duration),
+        isHighlight: c.is_highlight,
+        weekNumber: c.week_number,
+      }));
+      setClips(mappedClips);
+    }
+    setLoading(false);
+  }, [user, journeyId]);
+
+  useEffect(() => {
+    fetchClips();
+  }, [fetchClips]);
+
+  const toggleHighlight = async (clipId: string) => {
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip) return;
+
+    const newValue = !clip.isHighlight;
+    
+    // Optimistic update
     setClips((prev) =>
-      prev.map((clip) =>
-        clip.id === clipId ? { ...clip, isHighlight: !clip.isHighlight } : clip
+      prev.map((c) =>
+        c.id === clipId ? { ...c, isHighlight: newValue } : c
       )
     );
+
+    const { error } = await supabase
+      .from('video_clips')
+      .update({ is_highlight: newValue })
+      .eq('id', clipId);
+
+    if (error) {
+      console.error('Error toggling highlight:', error);
+      // Revert on error
+      setClips((prev) =>
+        prev.map((c) =>
+          c.id === clipId ? { ...c, isHighlight: !newValue } : c
+        )
+      );
+    }
   };
 
-  return { clips, toggleHighlight };
+  const deleteClip = async (clipId: string) => {
+    const { error } = await supabase
+      .from('video_clips')
+      .delete()
+      .eq('id', clipId);
+
+    if (error) {
+      console.error('Error deleting clip:', error);
+      return false;
+    }
+
+    setClips((prev) => prev.filter((c) => c.id !== clipId));
+    return true;
+  };
+
+  return { clips, loading, toggleHighlight, deleteClip, refetch: fetchClips };
 };

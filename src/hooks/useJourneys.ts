@@ -1,55 +1,88 @@
 import { useState, useEffect } from 'react';
-import { Journey, VideoClip } from '@/types/journey';
-
-// Mock data for demo
-const mockJourneys: Journey[] = [
-  {
-    id: '1',
-    name: 'Emma',
-    type: 'child',
-    dateOfBirth: '2023-06-15',
-    createdAt: '2023-06-15',
-    lastCaptureDate: '2024-01-26',
-    clipCount: 87,
-  },
-  {
-    id: '2',
-    name: 'Fitness Journey',
-    type: 'weightloss',
-    description: 'My transformation',
-    createdAt: '2023-09-01',
-    lastCaptureDate: '2024-01-25',
-    clipCount: 45,
-  },
-];
-
-const mockClips: VideoClip[] = [
-  { id: 'c1', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-26T10:30:00', duration: 1.5, isHighlight: false, weekNumber: 4 },
-  { id: 'c2', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-25T09:15:00', duration: 2, isHighlight: true, weekNumber: 4 },
-  { id: 'c3', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-24T14:20:00', duration: 1.8, isHighlight: false, weekNumber: 4 },
-  { id: 'c4', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-23T11:00:00', duration: 1.2, isHighlight: true, weekNumber: 4 },
-  { id: 'c5', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-22T16:45:00', duration: 2, isHighlight: false, weekNumber: 4 },
-  { id: 'c6', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-21T08:30:00', duration: 1.5, isHighlight: false, weekNumber: 3 },
-  { id: 'c7', journeyId: '1', uri: '', thumbnail: '', capturedAt: '2024-01-20T12:00:00', duration: 1.8, isHighlight: true, weekNumber: 3 },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Journey, VideoClip, JourneyType } from '@/types/journey';
 
 export const useJourneys = () => {
-  const [journeys, setJourneys] = useState<Journey[]>(mockJourneys);
-  const [loading, setLoading] = useState(false);
+  const [journeys, setJourneys] = useState<Journey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const addJourney = (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount'>) => {
+  const fetchJourneys = async () => {
+    if (!user) {
+      setJourneys([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('journeys')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching journeys:', error);
+    } else {
+      const mappedJourneys: Journey[] = (data || []).map((j) => ({
+        id: j.id,
+        name: j.name,
+        type: j.type as JourneyType,
+        description: j.description || undefined,
+        photo: j.photo || undefined,
+        dateOfBirth: j.date_of_birth || undefined,
+        createdAt: j.created_at,
+        lastCaptureDate: j.last_capture_date || undefined,
+        clipCount: j.clip_count,
+      }));
+      setJourneys(mappedJourneys);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchJourneys();
+  }, [user]);
+
+  const addJourney = async (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount'>) => {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('journeys')
+      .insert({
+        user_id: user.id,
+        name: journey.name,
+        type: journey.type,
+        description: journey.description || null,
+        date_of_birth: journey.dateOfBirth || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding journey:', error);
+      return null;
+    }
+
     const newJourney: Journey = {
-      ...journey,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      clipCount: 0,
+      id: data.id,
+      name: data.name,
+      type: data.type as JourneyType,
+      description: data.description || undefined,
+      dateOfBirth: data.date_of_birth || undefined,
+      createdAt: data.created_at,
+      clipCount: data.clip_count,
     };
-    setJourneys((prev) => [...prev, newJourney]);
+
+    setJourneys((prev) => [newJourney, ...prev]);
     return newJourney;
   };
 
-  return { journeys, loading, addJourney };
+  return { journeys, loading, addJourney, refetch: fetchJourneys };
 };
+
+// Mock clips for now - will be replaced with database later
+const mockClips: VideoClip[] = [];
 
 export const useJourneyClips = (journeyId: string) => {
   const [clips, setClips] = useState<VideoClip[]>([]);

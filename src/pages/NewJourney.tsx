@@ -53,17 +53,23 @@ const NewJourney: React.FC = () => {
   const [description, setDescription] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
 
-  const handleCreate = () => {
-    if (!selectedType || !name.trim()) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    addJourney({
+  const handleCreate = async () => {
+    if (!selectedType || !name.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    const result = await addJourney({
       name: name.trim(),
       type: selectedType,
       description: description.trim() || undefined,
       dateOfBirth: dateOfBirth || undefined,
     });
 
-    navigate('/home');
+    if (result) {
+      navigate('/home');
+    }
+    setIsSubmitting(false);
   };
 
   const isValid = selectedType && name.trim().length > 0;
@@ -163,9 +169,9 @@ const NewJourney: React.FC = () => {
             variant="primary"
             size="lg"
             fullWidth
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
           >
-            Create Journey
+            {isSubmitting ? 'Creating...' : 'Create Journey'}
           </IOSButton>
         </div>
       )}

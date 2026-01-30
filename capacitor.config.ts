@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.428fe18cb98b488abf648a4dd15def8d',
+  appId: 'com.journeyclips.app',
   appName: 'Journey Clips',
   webDir: 'dist',
   // Hot-reload: Points to Lovable preview for live development

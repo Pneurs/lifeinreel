@@ -14,6 +14,7 @@ import Record from "./pages/Record";
 import NewJourney from "./pages/NewJourney";
 import Profile from "./pages/Profile";
 import Timeline from "./pages/Timeline";
+import Reels from "./pages/Reels";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,11 @@ const App = () => (
             <Route path="/timeline" element={
               <ProtectedRoute>
                 <Timeline />
+              </ProtectedRoute>
+            } />
+            <Route path="/reels" element={
+              <ProtectedRoute>
+                <Reels />
               </ProtectedRoute>
             } />
             

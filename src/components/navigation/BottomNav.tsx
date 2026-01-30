@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Calendar, User, Plus } from 'lucide-react';
+import { Home, Film, User, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/home' },
-  { icon: Calendar, label: 'Timeline', path: '/timeline' },
-  { icon: User, label: 'Profile', path: '/profile' },
   { icon: Plus, label: 'Record', path: '/record', isMain: true },
+  { icon: Film, label: 'Reels', path: '/timeline' },
+  { icon: User, label: 'You', path: '/profile' },
 ];
 
 export const BottomNav: React.FC = () => {

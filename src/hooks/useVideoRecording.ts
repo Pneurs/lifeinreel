@@ -1,12 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Camera } from '@capacitor/camera';
 
 interface UseVideoRecordingProps {
   journeyId: string | null;
   maxDuration?: number;
   minDuration?: number;
 }
+
+// Check if running in Capacitor native app
+const isNativeApp = (): boolean => {
+  return typeof (window as any).Capacitor !== 'undefined' && 
+         (window as any).Capacitor.isNativePlatform?.();
+};
 
 export const useVideoRecording = ({ 
   journeyId, 
@@ -29,10 +36,44 @@ export const useVideoRecording = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Request camera permissions using Capacitor (triggers native iOS popup)
+  const requestCameraPermission = useCallback(async (): Promise<boolean> => {
+    if (!isNativeApp()) {
+      // In browser, permissions are handled by getUserMedia
+      return true;
+    }
+
+    try {
+      // This triggers the native iOS permission popup
+      const permission = await Camera.requestPermissions({ permissions: ['camera'] });
+      
+      if (permission.camera === 'granted') {
+        return true;
+      } else if (permission.camera === 'denied') {
+        setError('Camera permission denied. Please enable camera access in Settings > Journey Clips > Camera.');
+        return false;
+      } else {
+        // prompt - will show the native popup
+        return true;
+      }
+    } catch (err) {
+      console.error('Permission request error:', err);
+      // Fall back to web API
+      return true;
+    }
+  }, []);
+
   // Initialize camera with iOS-compatible constraints
   const initCamera = useCallback(async () => {
     try {
       setError(null);
+      
+      // Request permission first on native iOS
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) {
+        setCameraReady(false);
+        return null;
+      }
       
       // iOS-compatible constraints
       const constraints: MediaStreamConstraints = {
@@ -56,7 +97,7 @@ export const useVideoRecording = ({
       
       // More specific error messages for iOS
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Camera access denied. Please go to Settings > Safari > Camera and allow access.');
+        setError('Camera access denied. Please enable camera in Settings > Journey Clips > Camera.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setError('No camera found on this device.');
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
@@ -68,7 +109,7 @@ export const useVideoRecording = ({
       setCameraReady(false);
       return null;
     }
-  }, []);
+  }, [requestCameraPermission]);
 
   // Stop camera
   const stopCamera = useCallback(() => {

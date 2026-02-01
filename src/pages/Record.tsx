@@ -65,15 +65,26 @@ const Record: React.FC = () => {
   };
 
   const handleSave = async () => {
+    console.log('[Record] handleSave called', { selectedJourneyId, hasRecorded });
+    
     // If no journey selected, show picker
     if (!selectedJourneyId) {
       setShowJourneyPicker(true);
       return;
     }
 
+    if (!hasRecorded) {
+      toast.error('No recording to save. Please record first.');
+      return;
+    }
+
     const journeyId = selectedJourneyId;
+    console.log('[Record] Calling saveRecording with journeyId:', journeyId);
+    
     // Pass journeyId directly to avoid stale closure
     const result = await saveRecording(journeyId);
+    console.log('[Record] saveRecording result:', result);
+    
     if (result.success) {
       toast.success('Clip saved!');
       navigate(`/journey/${journeyId}`);
@@ -83,11 +94,21 @@ const Record: React.FC = () => {
   };
 
   const handleJourneySelect = async (journeyId: string) => {
+    console.log('[Record] handleJourneySelect called', { journeyId, hasRecorded });
     setSelectedJourneyId(journeyId);
     setShowJourneyPicker(false);
     
+    if (!hasRecorded) {
+      toast.error('No recording to save. Please record first.');
+      return;
+    }
+    
+    console.log('[Record] Calling saveRecording with journeyId:', journeyId);
+    
     // Pass journeyId directly to saveRecording to avoid stale state
     const result = await saveRecording(journeyId);
+    console.log('[Record] saveRecording result:', result);
+    
     if (result.success) {
       toast.success('Clip saved!');
       navigate(`/journey/${journeyId}`);

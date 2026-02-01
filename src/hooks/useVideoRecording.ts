@@ -240,8 +240,18 @@ export const useVideoRecording = ({
   const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<SaveRecordingResult> => {
     const targetJourneyId = overrideJourneyId || journeyId;
 
+    console.log('[saveRecording] Starting save...', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      hasBlob: !!recordedBlob, 
+      blobSize: recordedBlob?.size,
+      targetJourneyId,
+      recordingTime 
+    });
+
     if (!user) {
       const msg = 'Please sign in to save clips.';
+      console.error('[saveRecording] No user:', msg);
       setError(msg);
       return { success: false, error: msg };
     }
@@ -275,6 +285,8 @@ export const useVideoRecording = ({
 
       const fileName = `${user.id}/${targetJourneyId}/${Date.now()}.${extension}`;
 
+      console.log('[saveRecording] Uploading to storage:', fileName);
+      
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('videos')
@@ -285,15 +297,20 @@ export const useVideoRecording = ({
 
       if (uploadError) {
         const msg = `Upload failed: ${uploadError.message}`;
+        console.error('[saveRecording] Upload error:', uploadError);
         setError(msg);
         return { success: false, error: msg };
       }
+      
+      console.log('[saveRecording] Upload successful');
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('videos')
         .getPublicUrl(fileName);
 
+      console.log('[saveRecording] Saving clip metadata...');
+      
       // Save clip metadata
       const { error: dbError } = await supabase
         .from('video_clips')
@@ -307,12 +324,15 @@ export const useVideoRecording = ({
 
       if (dbError) {
         const msg = `Save failed: ${dbError.message}`;
+        console.error('[saveRecording] DB error:', dbError);
         setError(msg);
         return { success: false, error: msg };
       }
 
+      console.log('[saveRecording] Video saved successfully!');
       return { success: true };
     } catch (err) {
+      console.error('[saveRecording] Unexpected error:', err);
       const msg = toErrorMessage(err);
       setError(msg);
       return { success: false, error: msg };

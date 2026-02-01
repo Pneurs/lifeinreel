@@ -240,16 +240,26 @@ export const useVideoRecording = ({
   const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<SaveRecordingResult> => {
     const targetJourneyId = overrideJourneyId || journeyId;
 
+    // Check current session directly from Supabase (more reliable in Capacitor)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentUser = sessionData?.session?.user;
+    
     console.log('[saveRecording] Starting save...', { 
-      hasUser: !!user, 
-      userId: user?.id,
+      hasContextUser: !!user,
+      hasSessionUser: !!currentUser, 
+      userId: currentUser?.id || user?.id,
       hasBlob: !!recordedBlob, 
       blobSize: recordedBlob?.size,
+      blobType: recordedBlob?.type,
       targetJourneyId,
-      recordingTime 
+      recordingTime,
+      isNative: typeof (window as any).Capacitor !== 'undefined'
     });
 
-    if (!user) {
+    // Use session user if context user is stale
+    const effectiveUser = currentUser || user;
+
+    if (!effectiveUser) {
       const msg = 'Please sign in to save clips.';
       console.error('[saveRecording] No user:', msg);
       setError(msg);
@@ -283,9 +293,9 @@ export const useVideoRecording = ({
       const extension = isMP4 ? 'mp4' : 'webm';
       const contentType = isMP4 ? 'video/mp4' : 'video/webm';
 
-      const fileName = `${user.id}/${targetJourneyId}/${Date.now()}.${extension}`;
+      const fileName = `${effectiveUser.id}/${targetJourneyId}/${Date.now()}.${extension}`;
 
-      console.log('[saveRecording] Uploading to storage:', fileName);
+      console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
       
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -316,7 +326,7 @@ export const useVideoRecording = ({
         .from('video_clips')
         .insert({
           journey_id: targetJourneyId,
-          user_id: user.id,
+          user_id: effectiveUser.id,
           video_url: urlData.publicUrl,
           duration: Math.min(recordingTime, maxDuration),
           week_number: getWeekNumber(),

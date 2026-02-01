@@ -142,6 +142,7 @@ const Record: React.FC = () => {
             src={previewUrl}
             autoPlay
             loop
+            muted
             playsInline
             className="w-full h-full object-cover"
           />

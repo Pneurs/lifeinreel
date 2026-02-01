@@ -71,13 +71,14 @@ const Record: React.FC = () => {
       return;
     }
 
+    const journeyId = selectedJourneyId;
     // Pass journeyId directly to avoid stale closure
-    const success = await saveRecording(selectedJourneyId);
-    if (success) {
+    const result = await saveRecording(journeyId);
+    if (result.success) {
       toast.success('Clip saved!');
-      navigate(`/journey/${selectedJourneyId}`);
+      navigate(`/journey/${journeyId}`);
     } else {
-      toast.error(error || 'Failed to save');
+      toast.error(result.error || 'Failed to save');
     }
   };
 
@@ -86,12 +87,12 @@ const Record: React.FC = () => {
     setShowJourneyPicker(false);
     
     // Pass journeyId directly to saveRecording to avoid stale state
-    const success = await saveRecording(journeyId);
-    if (success) {
+    const result = await saveRecording(journeyId);
+    if (result.success) {
       toast.success('Clip saved!');
       navigate(`/journey/${journeyId}`);
     } else {
-      toast.error(error || 'Failed to save');
+      toast.error(result.error || 'Failed to save');
     }
   };
 

@@ -226,19 +226,42 @@ export const useVideoRecording = ({
     return Math.ceil(diff / oneWeek);
   };
 
+  type SaveRecordingResult = { success: boolean; error?: string };
+
+  const toErrorMessage = (err: unknown): string => {
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+      return (err as any).message;
+    }
+    return 'Failed to save recording';
+  };
+
   // Save recording - accepts optional journeyId override for when state hasn't updated yet
-  const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<boolean> => {
+  const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<SaveRecordingResult> => {
     const targetJourneyId = overrideJourneyId || journeyId;
-    
-    if (!recordedBlob || !targetJourneyId || !user) {
-      console.error('Save failed - missing data:', { hasBlob: !!recordedBlob, journeyId: targetJourneyId, hasUser: !!user });
-      setError('Missing data for save');
-      return false;
+
+    if (!user) {
+      const msg = 'Please sign in to save clips.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    if (!recordedBlob) {
+      const msg = 'No recording found to save.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    if (!targetJourneyId) {
+      const msg = 'Please select a journey to save to.';
+      setError(msg);
+      return { success: false, error: msg };
     }
 
     if (recordingTime < minDuration) {
-      setError(`Recording must be at least ${minDuration} second(s)`);
-      return false;
+      const msg = `Recording must be at least ${minDuration} second(s)`;
+      setError(msg);
+      return { success: false, error: msg };
     }
 
     setIsSaving(true);
@@ -249,22 +272,21 @@ export const useVideoRecording = ({
       const isMP4 = recordedBlob.type.includes('mp4');
       const extension = isMP4 ? 'mp4' : 'webm';
       const contentType = isMP4 ? 'video/mp4' : 'video/webm';
-      
+
       const fileName = `${user.id}/${targetJourneyId}/${Date.now()}.${extension}`;
-      
-      console.log('Uploading video:', fileName);
-      
+
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(fileName, recordedBlob, {
           contentType,
-          upsert: false
+          upsert: false,
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+        const msg = `Upload failed: ${uploadError.message}`;
+        setError(msg);
+        return { success: false, error: msg };
       }
 
       // Get public URL
@@ -272,8 +294,6 @@ export const useVideoRecording = ({
         .from('videos')
         .getPublicUrl(fileName);
 
-      console.log('Saving clip metadata for journey:', targetJourneyId);
-      
       // Save clip metadata
       const { error: dbError } = await supabase
         .from('video_clips')
@@ -286,16 +306,16 @@ export const useVideoRecording = ({
         });
 
       if (dbError) {
-        console.error('DB error:', dbError);
-        throw dbError;
+        const msg = `Save failed: ${dbError.message}`;
+        setError(msg);
+        return { success: false, error: msg };
       }
 
-      console.log('Video saved successfully!');
-      return true;
+      return { success: true };
     } catch (err) {
-      console.error('Save error:', err);
-      setError('Failed to save recording');
-      return false;
+      const msg = toErrorMessage(err);
+      setError(msg);
+      return { success: false, error: msg };
     } finally {
       setIsSaving(false);
     }

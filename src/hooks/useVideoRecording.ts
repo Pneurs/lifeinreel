@@ -321,41 +321,38 @@ export const useVideoRecording = ({
     setIsSaving(true);
     setError(null);
 
-    try {
-      // Determine file extension based on blob type
-      const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;
-      const isMP4 = effectiveMime.includes('mp4');
-      const extension = isMP4 ? 'mp4' : 'webm';
-      const contentType = isMP4 ? 'video/mp4' : 'video/webm';
+    // Determine file extension based on blob type
+    const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;
+    const isMP4 = effectiveMime.includes('mp4');
+    const extension = isMP4 ? 'mp4' : 'webm';
+    const contentType = isMP4 ? 'video/mp4' : 'video/webm';
+    const fileTimestamp = Date.now();
+    const fileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}.${extension}`;
 
-      const fileName = `${effectiveUser.id}/${targetJourneyId}/${Date.now()}.${extension}`;
+    const attemptSave = async (attempt: 1 | 2): Promise<SaveRecordingResult> => {
+      console.log('[saveRecording] Attempt', attempt);
 
-      console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
-      
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('videos')
         .upload(fileName, blobToSave, {
           contentType,
-          upsert: false,
+          // On iOS, the first network/auth roundtrip can fail while the webview is warming up.
+          // If we retry, allow overwriting the same filename.
+          upsert: attempt > 1,
         });
 
       if (uploadError) {
         const msg = `Upload failed: ${uploadError.message}`;
         console.error('[saveRecording] Upload error:', uploadError);
-        setError(msg);
         return { success: false, error: msg };
       }
-      
-      console.log('[saveRecording] Upload successful');
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('videos')
         .getPublicUrl(fileName);
 
-      console.log('[saveRecording] Saving clip metadata...');
-      
       // Save clip metadata
       const { error: dbError } = await supabase
         .from('video_clips')
@@ -370,12 +367,33 @@ export const useVideoRecording = ({
       if (dbError) {
         const msg = `Save failed: ${dbError.message}`;
         console.error('[saveRecording] DB error:', dbError);
-        setError(msg);
         return { success: false, error: msg };
       }
 
       console.log('[saveRecording] Video saved successfully!');
       return { success: true };
+    };
+
+    try {
+      console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
+
+      let result = await attemptSave(1);
+      if (!result.success && isNativeApp()) {
+        // Small backoff + refresh before retry.
+        try {
+          await supabase.auth.refreshSession();
+        } catch {
+          // ignore
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        result = await attemptSave(2);
+      }
+
+      if (!result.success) {
+        setError(result.error || 'Failed to save recording');
+      }
+
+      return result;
     } catch (err) {
       console.error('[saveRecording] Unexpected error:', err);
       const msg = toErrorMessage(err);

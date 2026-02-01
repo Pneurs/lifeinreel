@@ -47,7 +47,12 @@ const Record: React.FC = () => {
   // Attach stream to video element
   useEffect(() => {
     if (videoRef.current && stream && !hasRecorded) {
-      videoRef.current.srcObject = stream;
+      // iOS WebViews can route the stream audio back to output (feedback/"loop").
+      // Attaching a video-only stream prevents any live audio playback while still recording audio.
+      const videoOnlyStream = new MediaStream(stream.getVideoTracks());
+      videoRef.current.muted = true;
+      videoRef.current.volume = 0;
+      videoRef.current.srcObject = videoOnlyStream;
     }
   }, [stream, hasRecorded]);
 

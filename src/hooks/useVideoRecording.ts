@@ -23,7 +23,6 @@ export const useVideoRecording = ({
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [hasRecorded, setHasRecorded] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -35,6 +34,12 @@ export const useVideoRecording = ({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const recordedBlobRef = useRef<Blob | null>(null);
+  const recordingMimeTypeRef = useRef<string>('video/webm');
+  const isSavingRef = useRef(false);
+
+  // Derive: only "recorded" when we actually have a blob ready.
+  const hasRecorded = recordedBlob !== null;
 
   // Request camera permissions using Capacitor (triggers native iOS popup)
   const requestCameraPermission = useCallback(async (): Promise<boolean> => {
@@ -137,8 +142,8 @@ export const useVideoRecording = ({
 
     chunksRef.current = [];
     setRecordingTime(0);
-    setHasRecorded(false);
     setRecordedBlob(null);
+    recordedBlobRef.current = null;
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -154,6 +159,8 @@ export const useVideoRecording = ({
       } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
         mimeType = 'video/webm;codecs=vp8';
       }
+
+      recordingMimeTypeRef.current = mimeType;
       
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       
@@ -165,10 +172,10 @@ export const useVideoRecording = ({
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
+        recordedBlobRef.current = blob;
         setRecordedBlob(blob);
         const url = URL.createObjectURL(blob);
         setPreviewUrl(url);
-        setHasRecorded(true);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -207,8 +214,8 @@ export const useVideoRecording = ({
 
   // Retake
   const retake = useCallback(() => {
-    setHasRecorded(false);
     setRecordedBlob(null);
+    recordedBlobRef.current = null;
     setRecordingTime(0);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -238,11 +245,24 @@ export const useVideoRecording = ({
 
   // Save recording - accepts optional journeyId override for when state hasn't updated yet
   const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<SaveRecordingResult> => {
+    // Synchronous guard (prevents double-tap from starting two saves before React state updates).
+    if (isSavingRef.current) {
+      return { success: false, error: 'Save already in progress' };
+    }
+
     const targetJourneyId = overrideJourneyId || journeyId;
 
     // Check current session directly from Supabase (more reliable in Capacitor)
     const { data: sessionData } = await supabase.auth.getSession();
     const currentUser = sessionData?.session?.user;
+
+    // In native webviews, the first request can happen before auto-refresh completes.
+    // This is a no-op if not needed.
+    try {
+      await supabase.auth.refreshSession();
+    } catch {
+      // ignore
+    }
     
     console.log('[saveRecording] Starting save...', { 
       hasContextUser: !!user,
@@ -266,7 +286,20 @@ export const useVideoRecording = ({
       return { success: false, error: msg };
     }
 
-    if (!recordedBlob) {
+    // On iOS, the first tap can happen while MediaRecorder is still finalizing the blob.
+    // Wait briefly for the onstop handler to populate it.
+    const waitForRecordedBlob = async (timeoutMs = 1500): Promise<Blob | null> => {
+      const start = Date.now();
+      while (!recordedBlobRef.current) {
+        if (Date.now() - start > timeoutMs) return null;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return recordedBlobRef.current;
+    };
+
+    const blobToSave = recordedBlobRef.current || (await waitForRecordedBlob());
+
+    if (!blobToSave) {
       const msg = 'No recording found to save.';
       setError(msg);
       return { success: false, error: msg };
@@ -284,12 +317,14 @@ export const useVideoRecording = ({
       return { success: false, error: msg };
     }
 
+    isSavingRef.current = true;
     setIsSaving(true);
     setError(null);
 
     try {
       // Determine file extension based on blob type
-      const isMP4 = recordedBlob.type.includes('mp4');
+      const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;
+      const isMP4 = effectiveMime.includes('mp4');
       const extension = isMP4 ? 'mp4' : 'webm';
       const contentType = isMP4 ? 'video/mp4' : 'video/webm';
 
@@ -300,7 +335,7 @@ export const useVideoRecording = ({
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('videos')
-        .upload(fileName, recordedBlob, {
+        .upload(fileName, blobToSave, {
           contentType,
           upsert: false,
         });
@@ -348,6 +383,7 @@ export const useVideoRecording = ({
       return { success: false, error: msg };
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   }, [recordedBlob, journeyId, user, recordingTime, minDuration, maxDuration]);
 

@@ -65,7 +65,9 @@ const Record: React.FC = () => {
   };
 
   const handleSave = async () => {
-    console.log('[Record] handleSave called', { selectedJourneyId, hasRecorded });
+    console.log('[Record] handleSave called', { selectedJourneyId, hasRecorded, hasPreviewUrl: !!previewUrl, isSaving });
+
+    if (isSaving) return;
     
     // If no journey selected, show picker
     if (!selectedJourneyId) {
@@ -75,6 +77,12 @@ const Record: React.FC = () => {
 
     if (!hasRecorded) {
       toast.error('No recording to save. Please record first.');
+      return;
+    }
+
+    // iOS WebViews can take a moment to finalize the recording blob after stop.
+    if (!previewUrl) {
+      toast.message('Processing clip…');
       return;
     }
 
@@ -94,12 +102,19 @@ const Record: React.FC = () => {
   };
 
   const handleJourneySelect = async (journeyId: string) => {
-    console.log('[Record] handleJourneySelect called', { journeyId, hasRecorded });
+    console.log('[Record] handleJourneySelect called', { journeyId, hasRecorded, hasPreviewUrl: !!previewUrl, isSaving });
     setSelectedJourneyId(journeyId);
     setShowJourneyPicker(false);
+
+    if (isSaving) return;
     
     if (!hasRecorded) {
       toast.error('No recording to save. Please record first.');
+      return;
+    }
+
+    if (!previewUrl) {
+      toast.message('Processing clip…');
       return;
     }
     
@@ -270,7 +285,7 @@ const Record: React.FC = () => {
               variant="primary"
               size="iconLg"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || !previewUrl}
             >
               {isSaving ? (
                 <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />

@@ -226,9 +226,12 @@ export const useVideoRecording = ({
     return Math.ceil(diff / oneWeek);
   };
 
-  // Save recording
-  const saveRecording = useCallback(async (): Promise<boolean> => {
-    if (!recordedBlob || !journeyId || !user) {
+  // Save recording - accepts optional journeyId override for when state hasn't updated yet
+  const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<boolean> => {
+    const targetJourneyId = overrideJourneyId || journeyId;
+    
+    if (!recordedBlob || !targetJourneyId || !user) {
+      console.error('Save failed - missing data:', { hasBlob: !!recordedBlob, journeyId: targetJourneyId, hasUser: !!user });
       setError('Missing data for save');
       return false;
     }
@@ -247,7 +250,9 @@ export const useVideoRecording = ({
       const extension = isMP4 ? 'mp4' : 'webm';
       const contentType = isMP4 ? 'video/mp4' : 'video/webm';
       
-      const fileName = `${user.id}/${journeyId}/${Date.now()}.${extension}`;
+      const fileName = `${user.id}/${targetJourneyId}/${Date.now()}.${extension}`;
+      
+      console.log('Uploading video:', fileName);
       
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -258,6 +263,7 @@ export const useVideoRecording = ({
         });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
@@ -266,11 +272,13 @@ export const useVideoRecording = ({
         .from('videos')
         .getPublicUrl(fileName);
 
+      console.log('Saving clip metadata for journey:', targetJourneyId);
+      
       // Save clip metadata
       const { error: dbError } = await supabase
         .from('video_clips')
         .insert({
-          journey_id: journeyId,
+          journey_id: targetJourneyId,
           user_id: user.id,
           video_url: urlData.publicUrl,
           duration: Math.min(recordingTime, maxDuration),
@@ -278,9 +286,11 @@ export const useVideoRecording = ({
         });
 
       if (dbError) {
+        console.error('DB error:', dbError);
         throw dbError;
       }
 
+      console.log('Video saved successfully!');
       return true;
     } catch (err) {
       console.error('Save error:', err);

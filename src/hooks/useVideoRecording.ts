@@ -247,33 +247,38 @@ export const useVideoRecording = ({
   const saveRecording = useCallback(async (overrideJourneyId?: string): Promise<SaveRecordingResult> => {
     // Synchronous guard (prevents double-tap from starting two saves before React state updates).
     if (isSavingRef.current) {
+      console.log('[saveRecording] Already saving, skipping');
       return { success: false, error: 'Save already in progress' };
     }
 
     const targetJourneyId = overrideJourneyId || journeyId;
+    console.log('[saveRecording] Starting save...', { 
+      targetJourneyId, 
+      hasBlob: !!recordedBlobRef.current,
+      isNative: isNativeApp()
+    });
+
+    // CRITICAL: Refresh session BEFORE any network request on iOS WebViews.
+    // The first request after modal interactions often fails without this.
+    if (isNativeApp()) {
+      console.log('[saveRecording] Native app detected, warming up auth session...');
+      try {
+        await supabase.auth.refreshSession();
+        // Small delay to let the session settle
+        await new Promise((r) => setTimeout(r, 150));
+      } catch {
+        // ignore
+      }
+    }
 
     // Check current session directly from Supabase (more reliable in Capacitor)
     const { data: sessionData } = await supabase.auth.getSession();
     const currentUser = sessionData?.session?.user;
 
-    // In native webviews, the first request can happen before auto-refresh completes.
-    // This is a no-op if not needed.
-    try {
-      await supabase.auth.refreshSession();
-    } catch {
-      // ignore
-    }
-    
-    console.log('[saveRecording] Starting save...', { 
+    console.log('[saveRecording] Session check:', { 
       hasContextUser: !!user,
       hasSessionUser: !!currentUser, 
       userId: currentUser?.id || user?.id,
-      hasBlob: !!recordedBlob, 
-      blobSize: recordedBlob?.size,
-      blobType: recordedBlob?.type,
-      targetJourneyId,
-      recordingTime,
-      isNative: typeof (window as any).Capacitor !== 'undefined'
     });
 
     // Use session user if context user is stale
@@ -288,7 +293,7 @@ export const useVideoRecording = ({
 
     // On iOS, the first tap can happen while MediaRecorder is still finalizing the blob.
     // Wait briefly for the onstop handler to populate it.
-    const waitForRecordedBlob = async (timeoutMs = 1500): Promise<Blob | null> => {
+    const waitForRecordedBlob = async (timeoutMs = 2000): Promise<Blob | null> => {
       const start = Date.now();
       while (!recordedBlobRef.current) {
         if (Date.now() - start > timeoutMs) return null;
@@ -301,12 +306,14 @@ export const useVideoRecording = ({
 
     if (!blobToSave) {
       const msg = 'No recording found to save.';
+      console.error('[saveRecording] No blob found');
       setError(msg);
       return { success: false, error: msg };
     }
 
     if (!targetJourneyId) {
       const msg = 'Please select a journey to save to.';
+      console.error('[saveRecording] No journey ID');
       setError(msg);
       return { success: false, error: msg };
     }
@@ -329,64 +336,78 @@ export const useVideoRecording = ({
     const fileTimestamp = Date.now();
     const fileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}.${extension}`;
 
-    const attemptSave = async (attempt: 1 | 2): Promise<SaveRecordingResult> => {
-      console.log('[saveRecording] Attempt', attempt);
+    const attemptSave = async (attempt: number): Promise<SaveRecordingResult> => {
+      console.log(`[saveRecording] Attempt ${attempt} starting...`);
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(fileName, blobToSave, {
-          contentType,
-          // On iOS, the first network/auth roundtrip can fail while the webview is warming up.
-          // If we retry, allow overwriting the same filename.
-          upsert: attempt > 1,
-        });
+      try {
+        // Upload to storage - always use upsert for idempotency
+        const { error: uploadError } = await supabase.storage
+          .from('videos')
+          .upload(fileName, blobToSave, {
+            contentType,
+            upsert: true, // Always upsert for idempotency
+          });
 
-      if (uploadError) {
-        const msg = `Upload failed: ${uploadError.message}`;
-        console.error('[saveRecording] Upload error:', uploadError);
-        return { success: false, error: msg };
+        if (uploadError) {
+          console.error(`[saveRecording] Attempt ${attempt} upload error:`, uploadError);
+          return { success: false, error: `Upload failed: ${uploadError.message}` };
+        }
+
+        console.log(`[saveRecording] Attempt ${attempt} upload successful`);
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('videos')
+          .getPublicUrl(fileName);
+
+        // Save clip metadata
+        const { error: dbError } = await supabase
+          .from('video_clips')
+          .insert({
+            journey_id: targetJourneyId,
+            user_id: effectiveUser.id,
+            video_url: urlData.publicUrl,
+            duration: Math.min(recordingTime, maxDuration),
+            week_number: getWeekNumber(),
+          });
+
+        if (dbError) {
+          console.error(`[saveRecording] Attempt ${attempt} DB error:`, dbError);
+          return { success: false, error: `Save failed: ${dbError.message}` };
+        }
+
+        console.log('[saveRecording] Video saved successfully!');
+        return { success: true };
+      } catch (err) {
+        console.error(`[saveRecording] Attempt ${attempt} exception:`, err);
+        return { success: false, error: toErrorMessage(err) };
       }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('videos')
-        .getPublicUrl(fileName);
-
-      // Save clip metadata
-      const { error: dbError } = await supabase
-        .from('video_clips')
-        .insert({
-          journey_id: targetJourneyId,
-          user_id: effectiveUser.id,
-          video_url: urlData.publicUrl,
-          duration: Math.min(recordingTime, maxDuration),
-          week_number: getWeekNumber(),
-        });
-
-      if (dbError) {
-        const msg = `Save failed: ${dbError.message}`;
-        console.error('[saveRecording] DB error:', dbError);
-        return { success: false, error: msg };
-      }
-
-      console.log('[saveRecording] Video saved successfully!');
-      return { success: true };
     };
 
     try {
       console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
 
       let result = await attemptSave(1);
+      
+      // On native apps, retry up to 2 more times with backoff
       if (!result.success && isNativeApp()) {
-        // Small backoff + refresh before retry.
+        console.log('[saveRecording] First attempt failed, retrying...');
+        
+        // Refresh session and wait before retry
         try {
           await supabase.auth.refreshSession();
         } catch {
           // ignore
         }
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 300));
+        
         result = await attemptSave(2);
+        
+        if (!result.success) {
+          console.log('[saveRecording] Second attempt failed, final retry...');
+          await new Promise((r) => setTimeout(r, 500));
+          result = await attemptSave(3);
+        }
       }
 
       if (!result.success) {

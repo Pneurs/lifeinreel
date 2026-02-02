@@ -15,6 +15,13 @@ const isNativeApp = (): boolean => {
          (window as any).Capacitor.isNativePlatform?.();
 };
 
+// iOS Safari / iOS WebViews can be timing-sensitive for the first authenticated request
+// after UI interactions (modals/sheets). We treat iOS as a “needs warmup” environment.
+const isIOS = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+};
+
 export const useVideoRecording = ({ 
   journeyId, 
   maxDuration = 2, 
@@ -258,17 +265,18 @@ export const useVideoRecording = ({
       isNative: isNativeApp()
     });
 
-    // CRITICAL: Refresh session BEFORE any network request on iOS WebViews.
-    // The first request after modal interactions often fails without this.
-    if (isNativeApp()) {
-      console.log('[saveRecording] Native app detected, warming up auth session...');
+    // CRITICAL: iOS (Safari + WebViews) often fails the first authenticated request
+    // after modal/sheet interactions unless we refresh + wait a beat.
+    const needsAuthWarmup = isNativeApp() || isIOS();
+    if (needsAuthWarmup) {
+      console.log('[saveRecording] iOS/native detected, warming up auth session...');
       try {
         await supabase.auth.refreshSession();
-        // Small delay to let the session settle
-        await new Promise((r) => setTimeout(r, 150));
       } catch {
         // ignore
       }
+      // Small delay to let the session settle
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     // Check current session directly from Supabase (more reliable in Capacitor)
@@ -384,38 +392,41 @@ export const useVideoRecording = ({
       }
     };
 
-    try {
-      console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
+     try {
+       console.log('[saveRecording] Uploading to storage:', fileName, 'contentType:', contentType);
 
-      let result = await attemptSave(1);
-      
-      // On native apps, retry up to 2 more times with backoff
-      if (!result.success && isNativeApp()) {
-        console.log('[saveRecording] First attempt failed, retrying...');
-        
-        // Refresh session and wait before retry
-        try {
-          await supabase.auth.refreshSession();
-        } catch {
-          // ignore
-        }
-        await new Promise((r) => setTimeout(r, 300));
-        
-        result = await attemptSave(2);
-        
-        if (!result.success) {
-          console.log('[saveRecording] Second attempt failed, final retry...');
-          await new Promise((r) => setTimeout(r, 500));
-          result = await attemptSave(3);
-        }
-      }
+       // IMPORTANT: This bug presents as “first tap fails, second tap succeeds”.
+       // We fix that by retrying automatically within the same tap.
+       const maxAttempts = isNativeApp() ? 3 : 2;
+       const backoffMs = [0, 0, 350, 650];
 
-      if (!result.success) {
-        setError(result.error || 'Failed to save recording');
-      }
+       let lastResult: SaveRecordingResult = { success: false, error: 'Failed to save recording' };
 
-      return result;
-    } catch (err) {
+       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+         if (attempt > 1) {
+           console.log(`[saveRecording] Attempt ${attempt - 1} failed; retrying...`);
+
+           // Refresh session again right before retry on iOS/native.
+           if (needsAuthWarmup) {
+             try {
+               await supabase.auth.refreshSession();
+             } catch {
+               // ignore
+             }
+           }
+
+           await new Promise((r) => setTimeout(r, backoffMs[attempt] ?? 400));
+         }
+
+         lastResult = await attemptSave(attempt);
+         if (lastResult.success) {
+           return lastResult;
+         }
+       }
+
+       setError(lastResult.error || 'Failed to save recording');
+       return lastResult;
+     } catch (err) {
       console.error('[saveRecording] Unexpected error:', err);
       const msg = toErrorMessage(err);
       setError(msg);

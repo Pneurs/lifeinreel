@@ -18,7 +18,7 @@ const Home: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Welcome back</p>
-            <h1 className="text-2xl font-bold text-foreground">Your Journeys</h1>
+            <h1 className="text-2xl font-bold text-foreground">My Journeys</h1>
           </div>
           <button
             onClick={() => navigate('/new-journey')}

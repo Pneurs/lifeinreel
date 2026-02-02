@@ -5,11 +5,13 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';
 import { ClipActions } from '@/components/journey/ClipActions';
+import { ClipPreviewDialog } from '@/components/journey/ClipPreviewDialog';
 import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys, useJourneyClips } from '@/hooks/useJourneys';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { VideoClip } from '@/types/journey';
 
 type TabType = 'timeline' | 'weekly' | 'monthly';
 
@@ -17,8 +19,10 @@ const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { journeys } = useJourneys();
-  const { clips, loading: clipsLoading, toggleHighlight, deleteClip } = useJourneyClips(id || '');
+  const { clips, loading: clipsLoading, toggleHighlight, deleteClip, refetch } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
+  const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleDeleteClip = async (clipId: string) => {
     const success = await deleteClip(clipId);
@@ -28,6 +32,19 @@ const JourneyDetail: React.FC = () => {
       toast.error('Failed to delete clip');
     }
     return success;
+  };
+
+  const handleClipPlay = (clip: VideoClip) => {
+    setPreviewClip(clip);
+    setPreviewOpen(true);
+  };
+
+  const handleToggleHighlight = (clipId: string) => {
+    toggleHighlight(clipId);
+    // Update the preview clip state if it's the same clip
+    if (previewClip && previewClip.id === clipId) {
+      setPreviewClip(prev => prev ? { ...prev, isHighlight: !prev.isHighlight } : null);
+    }
   };
 
   const journey = journeys.find((j) => j.id === id);
@@ -126,8 +143,12 @@ const JourneyDetail: React.FC = () => {
                     <div className="flex gap-3 flex-wrap">
                       {dateClips.map((clip) => (
                         <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
-                          <ClipThumbnail clip={clip} size="md" />
-                        </ClipActions>
+                        <ClipThumbnail 
+                          clip={clip} 
+                          size="md" 
+                          onPlay={() => handleClipPlay(clip)}
+                        />
+                      </ClipActions>
                       ))}
                     </div>
                   </div>
@@ -154,7 +175,8 @@ const JourneyDetail: React.FC = () => {
                       clip={clip}
                       size="lg"
                       selectable
-                      onSelect={() => toggleHighlight(clip.id)}
+                      onSelect={() => handleToggleHighlight(clip.id)}
+                      onPlay={() => handleClipPlay(clip)}
                       showDate
                     />
                   </ClipActions>
@@ -191,7 +213,11 @@ const JourneyDetail: React.FC = () => {
                 <div className="grid grid-cols-4 gap-2">
                   {highlightedClips.map((clip) => (
                     <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
-                      <ClipThumbnail clip={clip} size="sm" />
+                      <ClipThumbnail 
+                        clip={clip} 
+                        size="sm" 
+                        onPlay={() => handleClipPlay(clip)}
+                      />
                     </ClipActions>
                   ))}
                 </div>
@@ -201,6 +227,15 @@ const JourneyDetail: React.FC = () => {
         </div>
       </MobileLayout>
       <BottomNav />
+      
+      {/* Video Preview Dialog */}
+      <ClipPreviewDialog
+        clip={previewClip}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        onToggleHighlight={handleToggleHighlight}
+        onDelete={handleDeleteClip}
+      />
     </>
   );
 };

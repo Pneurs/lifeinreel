@@ -98,7 +98,7 @@ const Onboarding: React.FC = () => {
             size="lg"
             fullWidth
           >
-            {currentSlide === slides.length - 1 ? 'Get Started' : 'Continue'}
+            {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
           </IOSButton>
         </div>
       </div>

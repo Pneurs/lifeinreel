@@ -78,7 +78,7 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
       {/* Day number badge - centered, handwritten style */}
       {dayNumber && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="font-handwritten text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <span className="font-handwritten font-bold text-2xl text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             Day {dayNumber}
           </span>
         </div>

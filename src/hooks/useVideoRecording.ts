@@ -219,11 +219,19 @@ export const useVideoRecording = ({
     setIsRecording(false);
   }, []);
 
-  // Retake
+  // Retake - fully reset recording state
   const retake = useCallback(() => {
+    // Stop any lingering timer first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    // Reset recording state
+    setIsRecording(false);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
     setRecordingTime(0);
+    chunksRef.current = [];
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);

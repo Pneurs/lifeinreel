@@ -241,22 +241,24 @@ const Record: React.FC = () => {
         </div>
       )}
 
-      {/* Progress bar */}
-      <div className="absolute bottom-40 left-6 right-6 z-10">
-        <div className="h-1 bg-background/20 rounded-full overflow-hidden">
-          <div
-            className={cn(
-              "h-full transition-all duration-100",
-              recordingTime >= minDuration ? "bg-primary" : "bg-destructive"
-            )}
-            style={{ width: `${Math.min(recordingTime / maxDuration, 1) * 100}%` }}
-          />
+      {/* Progress bar - only show during recording */}
+      {isRecording && (
+        <div className="absolute bottom-40 left-6 right-6 z-10">
+          <div className="h-1 bg-background/20 rounded-full overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-100",
+                recordingTime >= minDuration ? "bg-primary" : "bg-destructive"
+              )}
+              style={{ width: `${Math.min(recordingTime / maxDuration, 1) * 100}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-accent/60">
+            <span>{minDuration}s min</span>
+            <span>{maxDuration}s max</span>
+          </div>
         </div>
-        <div className="flex justify-between mt-2 text-xs text-accent/60">
-          <span>{minDuration}s min</span>
-          <span>{maxDuration}s max</span>
-        </div>
-      </div>
+      )}
 
       {/* Bottom controls */}
       <div className="absolute bottom-0 left-0 right-0 pb-12 px-6 z-10">

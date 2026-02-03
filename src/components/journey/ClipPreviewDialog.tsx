@@ -17,6 +17,7 @@ interface ClipPreviewDialogProps {
   onOpenChange: (open: boolean) => void;
   onToggleHighlight?: (clipId: string) => void;
   onDelete?: (clipId: string) => Promise<boolean>;
+  dayNumber?: number;
 }
 
 export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
@@ -25,6 +26,7 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
   onOpenChange,
   onToggleHighlight,
   onDelete,
+  dayNumber,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -58,6 +60,15 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
           <DialogTitle>Video Preview</DialogTitle>
         </VisuallyHidden>
         
+        {/* Day number badge - top left corner */}
+        {dayNumber && (
+          <div className="absolute top-4 left-4 z-20">
+            <span className="font-handwritten text-lg text-white bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm">
+              Day {dayNumber}
+            </span>
+          </div>
+        )}
+
         {/* Close button */}
         <button
           onClick={() => onOpenChange(false)}

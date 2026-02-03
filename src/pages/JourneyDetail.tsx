@@ -8,7 +8,7 @@ import { ClipActions } from '@/components/journey/ClipActions';
 import { ClipPreviewDialog } from '@/components/journey/ClipPreviewDialog';
 import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys, useJourneyClips } from '@/hooks/useJourneys';
-import { cn } from '@/lib/utils';
+import { cn, calculateDayNumber } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { VideoClip } from '@/types/journey';
@@ -48,6 +48,12 @@ const JourneyDetail: React.FC = () => {
   };
 
   const journey = journeys.find((j) => j.id === id);
+
+  // Calculate day number for a clip based on journey creation date
+  const getDayNumber = (capturedAt: string) => {
+    if (!journey) return undefined;
+    return calculateDayNumber(capturedAt, journey.createdAt);
+  };
 
   if (!journey) {
     return (
@@ -143,12 +149,13 @@ const JourneyDetail: React.FC = () => {
                     <div className="flex gap-3 flex-wrap">
                       {dateClips.map((clip) => (
                         <ClipActions key={clip.id} clipId={clip.id} onDelete={handleDeleteClip}>
-                        <ClipThumbnail 
-                          clip={clip} 
-                          size="md" 
-                          onPlay={() => handleClipPlay(clip)}
-                        />
-                      </ClipActions>
+                          <ClipThumbnail 
+                            clip={clip} 
+                            size="md" 
+                            onPlay={() => handleClipPlay(clip)}
+                            dayNumber={getDayNumber(clip.capturedAt)}
+                          />
+                        </ClipActions>
                       ))}
                     </div>
                   </div>
@@ -178,6 +185,7 @@ const JourneyDetail: React.FC = () => {
                       onSelect={() => handleToggleHighlight(clip.id)}
                       onPlay={() => handleClipPlay(clip)}
                       showDate
+                      dayNumber={getDayNumber(clip.capturedAt)}
                     />
                   </ClipActions>
                 ))}
@@ -217,6 +225,7 @@ const JourneyDetail: React.FC = () => {
                         clip={clip} 
                         size="sm" 
                         onPlay={() => handleClipPlay(clip)}
+                        dayNumber={getDayNumber(clip.capturedAt)}
                       />
                     </ClipActions>
                   ))}
@@ -235,6 +244,7 @@ const JourneyDetail: React.FC = () => {
         onOpenChange={setPreviewOpen}
         onToggleHighlight={handleToggleHighlight}
         onDelete={handleDeleteClip}
+        dayNumber={previewClip ? getDayNumber(previewClip.capturedAt) : undefined}
       />
     </>
   );

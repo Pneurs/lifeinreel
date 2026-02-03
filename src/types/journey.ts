@@ -21,6 +21,7 @@ export interface VideoClip {
   duration: number; // in seconds
   isHighlight: boolean;
   weekNumber: number;
+  dayNumber?: number; // Calculated from journey start date
 }
 
 export interface WeeklyHighlight {

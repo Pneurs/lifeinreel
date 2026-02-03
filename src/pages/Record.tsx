@@ -157,15 +157,23 @@ const Record: React.FC = () => {
             className="w-full h-full object-cover"
           />
         ) : previewUrl ? (
-          <video
-            ref={previewVideoRef}
-            src={previewUrl}
-            autoPlay
-            loop
-            playsInline
-            controls
-            className="w-full h-full object-contain bg-black"
-          />
+          <div className="w-full h-full flex flex-col">
+            {/* Preview label */}
+            <div className="bg-primary/90 py-2 px-4 text-center">
+              <span className="text-primary-foreground font-semibold text-sm">
+                📹 Preview your clip
+              </span>
+            </div>
+            <video
+              ref={previewVideoRef}
+              src={previewUrl}
+              autoPlay
+              loop
+              playsInline
+              controls
+              className="flex-1 w-full object-contain bg-black"
+            />
+          </div>
         ) : null}
 
         {/* Loading state for camera */}

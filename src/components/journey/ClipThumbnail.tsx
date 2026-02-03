@@ -11,6 +11,7 @@ interface ClipThumbnailProps {
   selectable?: boolean;
   showDate?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  dayNumber?: number;
 }
 
 export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
@@ -20,6 +21,7 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
   selectable = false,
   showDate = false,
   size = 'md',
+  dayNumber,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   
@@ -73,8 +75,17 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
       )}
       
+      {/* Day number badge - centered, handwritten style */}
+      {dayNumber && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="font-handwritten text-2xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            Day {dayNumber}
+          </span>
+        </div>
+      )}
+
       {/* Play indicator (hidden when playing) */}
-      {!isPlaying && (
+      {!isPlaying && !dayNumber && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center">
             <Play className="w-4 h-4 text-foreground ml-0.5" />

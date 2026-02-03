@@ -63,7 +63,7 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
         {/* Day number badge - top left corner */}
         {dayNumber && (
           <div className="absolute top-4 left-4 z-20">
-            <span className="font-handwritten text-lg text-white bg-black/40 px-2 py-1 rounded-lg backdrop-blur-sm">
+            <span className="font-handwritten font-bold text-2xl text-primary bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm">
               Day {dayNumber}
             </span>
           </div>

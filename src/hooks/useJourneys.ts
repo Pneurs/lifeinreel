@@ -112,6 +112,9 @@ export const useJourneyClips = (journeyId: string) => {
         duration: Number(c.duration),
         isHighlight: c.is_highlight,
         weekNumber: c.week_number,
+        isBestOfDay: (c as any).is_best_of_day ?? false,
+        isBestOfWeek: (c as any).is_best_of_week ?? false,
+        isBestOfMonth: (c as any).is_best_of_month ?? false,
       }));
       setClips(mappedClips);
     }
@@ -166,5 +169,42 @@ export const useJourneyClips = (journeyId: string) => {
     return true;
   };
 
-  return { clips, loading, toggleHighlight, deleteClip, refetch: fetchClips };
+  const toggleBestOf = async (clipId: string, type: 'day' | 'week' | 'month') => {
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip) return;
+
+    const fieldMap = {
+      day: { local: 'isBestOfDay', db: 'is_best_of_day' },
+      week: { local: 'isBestOfWeek', db: 'is_best_of_week' },
+      month: { local: 'isBestOfMonth', db: 'is_best_of_month' },
+    } as const;
+
+    const field = fieldMap[type];
+    const currentValue = clip[field.local as keyof VideoClip] as boolean;
+    const newValue = !currentValue;
+
+    // Optimistic update
+    setClips((prev) =>
+      prev.map((c) =>
+        c.id === clipId ? { ...c, [field.local]: newValue } : c
+      )
+    );
+
+    const { error } = await supabase
+      .from('video_clips')
+      .update({ [field.db]: newValue } as any)
+      .eq('id', clipId);
+
+    if (error) {
+      console.error(`Error toggling ${type}:`, error);
+      // Revert on error
+      setClips((prev) =>
+        prev.map((c) =>
+          c.id === clipId ? { ...c, [field.local]: currentValue } : c
+        )
+      );
+    }
+  };
+
+  return { clips, loading, toggleHighlight, toggleBestOf, deleteClip, refetch: fetchClips };
 };

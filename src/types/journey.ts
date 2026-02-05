@@ -22,6 +22,9 @@ export interface VideoClip {
   isHighlight: boolean;
   weekNumber: number;
   dayNumber?: number; // Calculated from journey start date
+  isBestOfDay: boolean;
+  isBestOfWeek: boolean;
+  isBestOfMonth: boolean;
 }
 
 export interface WeeklyHighlight {

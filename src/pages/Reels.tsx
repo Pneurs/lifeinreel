@@ -1,11 +1,14 @@
 import React from 'react';
-import { Film, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Film, Play, Plus } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys } from '@/hooks/useJourneys';
 import { format } from 'date-fns';
 
 const Reels: React.FC = () => {
+  const navigate = useNavigate();
   const { journeys } = useJourneys();
 
   // Mock generated videos data
@@ -20,9 +23,15 @@ const Reels: React.FC = () => {
     <>
       <MobileLayout>
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Reels</h1>
-          <p className="text-muted-foreground">Your generated videos</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Reels</h1>
+            <p className="text-muted-foreground">Your generated videos</p>
+          </div>
+          <IOSButton variant="primary" size="sm" onClick={() => navigate('/compile')}>
+            <Plus className="w-4 h-4" />
+            Create New
+          </IOSButton>
         </div>
 
         {/* Videos Grid */}
@@ -63,9 +72,13 @@ const Reels: React.FC = () => {
               <Film className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">No videos yet</h3>
-            <p className="text-sm text-muted-foreground max-w-xs">
+            <p className="text-sm text-muted-foreground max-w-xs mb-4">
               Your generated highlight reels and monthly videos will appear here
             </p>
+            <IOSButton variant="primary" onClick={() => navigate('/compile')}>
+              <Plus className="w-4 h-4" />
+              Create Compilation
+            </IOSButton>
           </div>
         )}
       </MobileLayout>

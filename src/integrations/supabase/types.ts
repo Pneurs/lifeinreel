@@ -86,6 +86,9 @@ export type Database = {
           created_at: string
           duration: number
           id: string
+          is_best_of_day: boolean
+          is_best_of_month: boolean
+          is_best_of_week: boolean
           is_highlight: boolean
           journey_id: string
           thumbnail_url: string | null
@@ -98,6 +101,9 @@ export type Database = {
           created_at?: string
           duration: number
           id?: string
+          is_best_of_day?: boolean
+          is_best_of_month?: boolean
+          is_best_of_week?: boolean
           is_highlight?: boolean
           journey_id: string
           thumbnail_url?: string | null
@@ -110,6 +116,9 @@ export type Database = {
           created_at?: string
           duration?: number
           id?: string
+          is_best_of_day?: boolean
+          is_best_of_month?: boolean
+          is_best_of_week?: boolean
           is_highlight?: boolean
           journey_id?: string
           thumbnail_url?: string | null

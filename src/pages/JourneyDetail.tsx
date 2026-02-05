@@ -19,7 +19,7 @@ const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { journeys } = useJourneys();
-  const { clips, loading: clipsLoading, toggleHighlight, deleteClip, refetch } = useJourneyClips(id || '');
+  const { clips, loading: clipsLoading, toggleHighlight, toggleBestOf, deleteClip, refetch } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -44,6 +44,15 @@ const JourneyDetail: React.FC = () => {
     // Update the preview clip state if it's the same clip
     if (previewClip && previewClip.id === clipId) {
       setPreviewClip(prev => prev ? { ...prev, isHighlight: !prev.isHighlight } : null);
+    }
+  };
+
+  const handleToggleBestOf = (clipId: string, type: 'day' | 'week' | 'month') => {
+    toggleBestOf(clipId, type);
+    // Update the preview clip state if it's the same clip
+    if (previewClip && previewClip.id === clipId) {
+      const fieldMap = { day: 'isBestOfDay', week: 'isBestOfWeek', month: 'isBestOfMonth' } as const;
+      setPreviewClip(prev => prev ? { ...prev, [fieldMap[type]]: !prev[fieldMap[type]] } : null);
     }
   };
 
@@ -243,6 +252,7 @@ const JourneyDetail: React.FC = () => {
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         onToggleHighlight={handleToggleHighlight}
+        onToggleBestOf={handleToggleBestOf}
         onDelete={handleDeleteClip}
         dayNumber={previewClip ? getDayNumber(previewClip.capturedAt) : undefined}
       />

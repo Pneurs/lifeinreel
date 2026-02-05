@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { X, Star, Trash2 } from 'lucide-react';
+import { X, Star, Trash2, Calendar, CalendarDays } from 'lucide-react';
 import { VideoClip } from '@/types/journey';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
@@ -16,6 +16,7 @@ interface ClipPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onToggleHighlight?: (clipId: string) => void;
+  onToggleBestOf?: (clipId: string, type: 'day' | 'week' | 'month') => void;
   onDelete?: (clipId: string) => Promise<boolean>;
   dayNumber?: number;
 }
@@ -25,6 +26,7 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
   open,
   onOpenChange,
   onToggleHighlight,
+  onToggleBestOf,
   onDelete,
   dayNumber,
 }) => {
@@ -109,6 +111,48 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
               </div>
             )}
           </div>
+
+          {/* Best-of marking buttons */}
+          {onToggleBestOf && (
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => onToggleBestOf(clip.id, 'day')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium transition-colors',
+                  clip.isBestOfDay
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-muted/50 text-muted-foreground'
+                )}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Best Day
+              </button>
+              <button
+                onClick={() => onToggleBestOf(clip.id, 'week')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium transition-colors',
+                  clip.isBestOfWeek
+                    ? 'bg-green-500 text-white'
+                    : 'bg-muted/50 text-muted-foreground'
+                )}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                Best Week
+              </button>
+              <button
+                onClick={() => onToggleBestOf(clip.id, 'month')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium transition-colors',
+                  clip.isBestOfMonth
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-muted/50 text-muted-foreground'
+                )}
+              >
+                <Star className="w-3.5 h-3.5" />
+                Best Month
+              </button>
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="flex gap-3">

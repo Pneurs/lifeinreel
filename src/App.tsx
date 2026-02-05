@@ -15,6 +15,7 @@ import NewJourney from "./pages/NewJourney";
 import Profile from "./pages/Profile";
 import Timeline from "./pages/Timeline";
 import Reels from "./pages/Reels";
+import Compile from "./pages/Compile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,11 @@ const App = () => (
             <Route path="/reels" element={
               <ProtectedRoute>
                 <Reels />
+              </ProtectedRoute>
+            } />
+            <Route path="/compile" element={
+              <ProtectedRoute>
+                <Compile />
               </ProtectedRoute>
             } />
             

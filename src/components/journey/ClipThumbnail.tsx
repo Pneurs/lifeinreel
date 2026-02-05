@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { VideoClip } from '@/types/journey';
-import { Star, Play } from 'lucide-react';
+import { Star, Play, Calendar, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 
@@ -40,6 +40,8 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
       setIsPlaying(!isPlaying);
     }
   };
+
+  const hasBestOfBadges = clip.isBestOfDay || clip.isBestOfWeek || clip.isBestOfMonth;
 
   return (
     <button
@@ -93,7 +95,28 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
         </div>
       )}
 
-      {/* Highlight star */}
+      {/* Best-of badges - top left corner */}
+      {hasBestOfBadges && (
+        <div className="absolute top-1.5 left-1.5 flex gap-1">
+          {clip.isBestOfDay && (
+            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+              <Calendar className="w-3 h-3 text-white" />
+            </div>
+          )}
+          {clip.isBestOfWeek && (
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <CalendarDays className="w-3 h-3 text-white" />
+            </div>
+          )}
+          {clip.isBestOfMonth && (
+            <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
+              <Star className="w-3 h-3 text-white fill-white" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Highlight star - top right */}
       {clip.isHighlight && (
         <div className="absolute top-1.5 right-1.5">
           <Star className="w-4 h-4 text-primary fill-primary" />

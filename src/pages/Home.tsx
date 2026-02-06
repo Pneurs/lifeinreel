@@ -5,11 +5,12 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { JourneyCard } from '@/components/journey/JourneyCard';
 import { IOSButton } from '@/components/ui/ios-button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useJourneys } from '@/hooks/useJourneys';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { journeys } = useJourneys();
+  const { journeys, loading } = useJourneys();
 
   return (
     <>
@@ -41,7 +42,14 @@ const Home: React.FC = () => {
 
         {/* Journeys list */}
         <div className="space-y-4">
-          {journeys.length > 0 ? (
+          {loading ? (
+            // Skeleton placeholders while loading
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden">
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ))
+          ) : journeys.length > 0 ? (
             journeys.map((journey) => (
               <JourneyCard key={journey.id} journey={journey} />
             ))

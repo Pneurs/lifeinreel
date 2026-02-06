@@ -219,24 +219,44 @@ export const useVideoRecording = ({
     setIsRecording(false);
   }, []);
 
-  // Retake - fully reset recording state
-  const retake = useCallback(() => {
+  // Retake - fully reset recording state and re-initialize camera fresh
+  const retake = useCallback(async () => {
     // Stop any lingering timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
+    // Stop the old MediaRecorder if still active
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try { mediaRecorderRef.current.stop(); } catch { /* ignore */ }
+    }
+    mediaRecorderRef.current = null;
+
     // Reset recording state
     setIsRecording(false);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
     setRecordingTime(0);
     chunksRef.current = [];
+    setError(null);
+
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
     }
-  }, [previewUrl]);
+
+    // Stop old camera tracks and re-initialize fresh
+    // This is called from a click handler so getUserMedia keeps gesture context
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+      setCameraReady(false);
+    }
+
+    // Get a completely fresh camera stream
+    await initCamera();
+  }, [previewUrl, stream, initCamera]);
 
   // Calculate week number from journey start
   const getWeekNumber = (): number => {

@@ -44,6 +44,7 @@ export const useVideoRecording = ({
   const recordedBlobRef = useRef<Blob | null>(null);
   const recordingMimeTypeRef = useRef<string>('video/webm');
   const isSavingRef = useRef(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Derive: only "recorded" when we actually have a blob ready.
   const hasRecorded = recordedBlob !== null;
@@ -79,6 +80,12 @@ export const useVideoRecording = ({
   const initCamera = useCallback(async () => {
     try {
       setError(null);
+
+      // Always stop any existing stream before acquiring a new one
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       
       // Request permission first on native iOS
       const hasPermission = await requestCameraPermission();
@@ -101,6 +108,7 @@ export const useVideoRecording = ({
       };
       
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = mediaStream;
       setStream(mediaStream);
       setCameraReady(true);
       return mediaStream;
@@ -123,14 +131,15 @@ export const useVideoRecording = ({
     }
   }, [requestCameraPermission]);
 
-  // Stop camera
+  // Stop camera — use ref so this callback never has a stale stream
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
       setStream(null);
       setCameraReady(false);
     }
-  }, [stream]);
+  }, []);
 
   // Set video element ref for preview
   const setVideoRef = useCallback((element: HTMLVideoElement | null) => {
@@ -220,6 +229,7 @@ export const useVideoRecording = ({
   }, []);
 
   // Retake - fully reset recording state and re-initialize camera fresh
+  // Uses refs instead of state to avoid stale closures (the "click twice" bug)
   const retake = useCallback(async () => {
     // Stop any lingering timer first
     if (timerRef.current) {
@@ -246,17 +256,10 @@ export const useVideoRecording = ({
       setPreviewUrl(null);
     }
 
-    // Stop old camera tracks and re-initialize fresh
-    // This is called from a click handler so getUserMedia keeps gesture context
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-      setCameraReady(false);
-    }
-
-    // Get a completely fresh camera stream
+    // initCamera() now handles stopping the old stream via streamRef
+    // so we don't need to manually stop it here (avoids stale closure on `stream`)
     await initCamera();
-  }, [previewUrl, stream, initCamera]);
+  }, [previewUrl, initCamera]);
 
   // Calculate week number from journey start
   const getWeekNumber = (): number => {

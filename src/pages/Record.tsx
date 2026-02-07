@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Check, RotateCcw, AlertCircle } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';
+import { useCameraZoom } from '@/hooks/useCameraZoom';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneySelector } from '@/components/record/JourneySelector';
 import { toast } from 'sonner';
@@ -16,6 +17,12 @@ const Record: React.FC = () => {
   const [showJourneyPicker, setShowJourneyPicker] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+
+  const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
+    (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+    setVideoElement(el);
+  }, []);
 
   const { journeys } = useJourneys();
 
@@ -144,10 +151,20 @@ const Record: React.FC = () => {
 
   const selectedJourney = journeys.find(j => j.id === selectedJourneyId);
 
-  // Prevent pinch-to-zoom on the record page so controls stay static
+  // Enable pinch-to-zoom on the camera feed
+  useCameraZoom({
+    stream,
+    videoElement,
+    enabled: !hasRecorded && cameraReady,
+  });
+
+  // Prevent pinch-to-zoom on the record page (except on the video element which handles its own)
   useEffect(() => {
     const preventZoom = (e: TouchEvent) => {
       if (e.touches.length > 1) {
+        // Allow pinch on the video element for camera zoom
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'VIDEO') return;
         e.preventDefault();
       }
     };
@@ -161,11 +178,12 @@ const Record: React.FC = () => {
       <div className="absolute inset-0 bg-black">
         {!hasRecorded ? (
           <video
-            ref={videoRef}
+            ref={videoCallbackRef}
             autoPlay
             muted
             playsInline
             className="w-full h-full object-cover"
+            style={{ touchAction: 'none' }}
           />
         ) : previewUrl ? (
           <div className="w-full h-full flex flex-col">

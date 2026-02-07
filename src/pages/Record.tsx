@@ -144,8 +144,19 @@ const Record: React.FC = () => {
 
   const selectedJourney = journeys.find(j => j.id === selectedJourneyId);
 
+  // Prevent pinch-to-zoom on the record page so controls stay static
+  useEffect(() => {
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('touchmove', preventZoom, { passive: false });
+    return () => document.removeEventListener('touchmove', preventZoom);
+  }, []);
+
   return (
-    <div className="min-h-screen max-w-md mx-auto bg-foreground relative overflow-hidden">
+    <div className="min-h-screen max-w-md mx-auto bg-foreground relative overflow-hidden" style={{ touchAction: 'pan-y' }}>
       {/* Camera preview or recorded video */}
       <div className="absolute inset-0 bg-black">
         {!hasRecorded ? (

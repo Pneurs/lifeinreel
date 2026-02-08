@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Check, RotateCcw, AlertCircle, SwitchCamera } from 'lucide-react';
+import { X, Check, RotateCcw, AlertCircle, SwitchCamera, Volume2, VolumeX } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';
@@ -18,6 +18,7 @@ const Record: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
     (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
@@ -188,11 +189,26 @@ const Record: React.FC = () => {
           />
         ) : previewUrl ? (
           <div className="w-full h-full flex flex-col">
-            {/* Preview label */}
-            <div className="bg-primary/90 py-2 px-4 text-center">
+            {/* Preview label with mute toggle */}
+            <div className="bg-primary/90 py-2 px-4 flex items-center justify-between">
               <span className="text-primary-foreground font-semibold text-sm">
                 📹 Preview your clip
               </span>
+              <button
+                onClick={() => {
+                  setIsMuted(m => !m);
+                  if (previewVideoRef.current) {
+                    previewVideoRef.current.muted = !previewVideoRef.current.muted;
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center"
+              >
+                {isMuted ? (
+                  <VolumeX className="w-4 h-4 text-primary-foreground" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-primary-foreground" />
+                )}
+              </button>
             </div>
             <video
               ref={previewVideoRef}
@@ -201,6 +217,7 @@ const Record: React.FC = () => {
               loop
               playsInline
               controls
+              muted={isMuted}
               className="flex-1 w-full object-contain bg-black"
             />
           </div>

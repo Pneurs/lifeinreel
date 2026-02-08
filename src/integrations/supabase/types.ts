@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      compilations: {
+        Row: {
+          clip_count: number
+          clip_ids: string[]
+          created_at: string
+          description: string | null
+          duration: number
+          id: string
+          journey_id: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          clip_count?: number
+          clip_ids?: string[]
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          journey_id?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          clip_count?: number
+          clip_ids?: string[]
+          created_at?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          journey_id?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compilations_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journeys: {
         Row: {
           clip_count: number

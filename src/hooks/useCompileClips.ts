@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VideoClip } from '@/types/journey';
+import { calculateDayNumber } from '@/lib/utils';
 
 export type TagFilter = 'all' | 'day' | 'week' | 'month';
 
@@ -65,19 +66,35 @@ export const useCompileClips = (options: UseCompileClipsOptions) => {
         console.error('Error fetching clips for compile:', error);
         setClips([]);
       } else {
-        const mappedClips: VideoClip[] = (data || []).map((c) => ({
-          id: c.id,
-          journeyId: c.journey_id,
-          uri: c.video_url,
-          thumbnail: c.thumbnail_url || c.video_url,
-          capturedAt: c.captured_at,
-          duration: Number(c.duration),
-          isHighlight: c.is_highlight,
-          weekNumber: c.week_number,
-          isBestOfDay: (c as any).is_best_of_day ?? false,
-          isBestOfWeek: (c as any).is_best_of_week ?? false,
-          isBestOfMonth: (c as any).is_best_of_month ?? false,
-        }));
+        // Fetch journey created_at dates to calculate day numbers
+        const journeyIds = [...new Set((data || []).map((c: any) => c.journey_id))];
+        const { data: journeyData } = await supabase
+          .from('journeys')
+          .select('id, created_at')
+          .in('id', journeyIds);
+        
+        const journeyCreatedAtMap = new Map<string, string>();
+        (journeyData || []).forEach((j: any) => {
+          journeyCreatedAtMap.set(j.id, j.created_at);
+        });
+
+        const mappedClips: VideoClip[] = (data || []).map((c) => {
+          const journeyCreatedAt = journeyCreatedAtMap.get(c.journey_id);
+          return {
+            id: c.id,
+            journeyId: c.journey_id,
+            uri: c.video_url,
+            thumbnail: c.thumbnail_url || c.video_url,
+            capturedAt: c.captured_at,
+            duration: Number(c.duration),
+            isHighlight: c.is_highlight,
+            weekNumber: c.week_number,
+            dayNumber: journeyCreatedAt ? calculateDayNumber(c.captured_at, journeyCreatedAt) : undefined,
+            isBestOfDay: (c as any).is_best_of_day ?? false,
+            isBestOfWeek: (c as any).is_best_of_week ?? false,
+            isBestOfMonth: (c as any).is_best_of_month ?? false,
+          };
+        });
         setClips(mappedClips);
         // Select all by default
         setSelectedIds(new Set(mappedClips.map(c => c.id)));

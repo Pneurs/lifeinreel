@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Play, Pause, Trash2, Share2, Download } from 'lucide-react';
+import { Play, Pause, Trash2, Share2, Download, Volume2, VolumeX } from 'lucide-react';
 import { Compilation } from '@/types/journey';
 import { format, parseISO } from 'date-fns';
 
@@ -18,18 +18,20 @@ export const ReelCard: React.FC<ReelCardProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showControls, setShowControls] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isActive) {
+      video.muted = true; // Always start muted for autoplay compatibility
       video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     } else {
       video.pause();
       video.currentTime = 0;
       setIsPlaying(false);
+      setIsMuted(true); // Reset mute state when scrolling away
     }
   }, [isActive]);
 
@@ -43,6 +45,16 @@ export const ReelCard: React.FC<ReelCardProps> = ({
       video.pause();
       setIsPlaying(false);
     }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering play/pause
+    const video = videoRef.current;
+    if (!video) return;
+
+    const newMuted = !isMuted;
+    video.muted = newMuted;
+    setIsMuted(newMuted);
   };
 
   const handleDownload = () => {
@@ -69,7 +81,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         className="w-full h-full object-contain bg-background"
         loop
         playsInline
-        muted={false}
+        muted
         onClick={togglePlay}
       />
 
@@ -82,6 +94,20 @@ export const ReelCard: React.FC<ReelCardProps> = ({
           <div className="w-16 h-16 rounded-full bg-primary/80 flex items-center justify-center">
             <Play className="w-7 h-7 text-primary-foreground ml-1" />
           </div>
+        </button>
+      )}
+
+      {/* Mute/Unmute button */}
+      {isActive && (
+        <button
+          onClick={toggleMute}
+          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
+        >
+          {isMuted ? (
+            <VolumeX className="w-5 h-5 text-foreground" />
+          ) : (
+            <Volume2 className="w-5 h-5 text-foreground" />
+          )}
         </button>
       )}
 

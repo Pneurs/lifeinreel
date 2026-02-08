@@ -159,7 +159,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
         const video = videos[i];
         video.currentTime = 0;
-        video.muted = false;
+        video.muted = true;
 
         setProgress({
           stage: 'processing',

@@ -40,18 +40,31 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
     setCompiledUrl(null);
   }, [compiledUrl]);
 
-  const loadVideo = (url: string): Promise<HTMLVideoElement> => {
+  const fetchAsBlob = async (url: string): Promise<string> => {
+    // Fetch the video as a blob to avoid CORS issues with crossOrigin on <video>
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to download video (${response.status})`);
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  };
+
+  const loadVideo = async (url: string): Promise<{ video: HTMLVideoElement; blobUrl: string }> => {
+    // Convert remote URL to a local blob URL to bypass crossOrigin taint
+    const blobUrl = await fetchAsBlob(url);
+
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
-      video.crossOrigin = 'anonymous';
       video.muted = true;
       video.playsInline = true;
       video.preload = 'auto';
 
-      video.onloadeddata = () => resolve(video);
-      video.onerror = () => reject(new Error(`Failed to load video: ${url}`));
+      video.onloadeddata = () => resolve({ video, blobUrl });
+      video.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error(`Failed to load video: ${url}`));
+      };
 
-      video.src = url;
+      video.src = blobUrl;
       video.load();
     });
   };
@@ -70,8 +83,9 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
       message: 'Loading video clips...',
     });
 
+    const blobUrls: string[] = [];
     try {
-      // Load all videos first
+      // Load all videos first (fetch as blobs to avoid CORS)
       const videos: HTMLVideoElement[] = [];
       for (let i = 0; i < videoUrls.length; i++) {
         if (abortRef.current) return null;
@@ -82,8 +96,9 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
           percent: Math.round(((i + 1) / totalClips) * 30),
           message: `Loading clip ${i + 1} of ${totalClips}...`,
         });
-        const video = await loadVideo(videoUrls[i]);
+        const { video, blobUrl } = await loadVideo(videoUrls[i]);
         videos.push(video);
+        blobUrls.push(blobUrl);
       }
 
       if (abortRef.current) return null;
@@ -195,11 +210,12 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
       const blob = await recordingDone;
       audioCtx.close();
 
-      // Cleanup
+      // Cleanup video elements and blob URLs
       videos.forEach(v => {
         v.pause();
         v.src = '';
       });
+      blobUrls.forEach(u => URL.revokeObjectURL(u));
 
       const url = URL.createObjectURL(blob);
       setCompiledBlob(blob);

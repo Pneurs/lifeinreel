@@ -169,11 +169,11 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
           message: `Processing clip ${i + 1} of ${totalClips}...`,
         });
 
-        // Try to connect audio
+        // Connect audio to the recording stream only (NOT to speakers)
         try {
           const source = audioCtx.createMediaElementSource(video);
           source.connect(destination);
-          source.connect(audioCtx.destination);
+          // Do NOT connect to audioCtx.destination – that would play audio out loud
         } catch {
           // Audio source may already be connected or unavailable
         }

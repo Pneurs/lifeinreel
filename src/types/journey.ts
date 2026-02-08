@@ -34,3 +34,18 @@ export interface WeeklyHighlight {
   clipIds: string[];
   selectedAt?: string;
 }
+
+export interface Compilation {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  clipCount: number;
+  clipIds: string[];
+  journeyId?: string;
+  createdAt: string;
+  updatedAt: string;
+}

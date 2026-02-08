@@ -6,8 +6,12 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { CompileFilters } from '@/components/compile/CompileFilters';
 import { SelectableClipThumbnail } from '@/components/compile/SelectableClipThumbnail';
 import { DurationCounter } from '@/components/compile/DurationCounter';
+import { CompilationProgress } from '@/components/compile/CompilationProgress';
+import { CompilationResultSheet } from '@/components/compile/CompilationResultSheet';
 import { useJourneys } from '@/hooks/useJourneys';
 import { useCompileClips, TagFilter } from '@/hooks/useCompileClips';
+import { useVideoCompilation } from '@/hooks/useVideoCompilation';
+import { useCompilations } from '@/hooks/useCompilations';
 import { toast } from 'sonner';
 
 const Compile: React.FC = () => {
@@ -19,7 +23,6 @@ const Compile: React.FC = () => {
   const [tagFilter, setTagFilter] = useState<TagFilter>('all');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [isCompiling, setIsCompiling] = useState(false);
 
   const {
     clips,
@@ -35,19 +38,71 @@ const Compile: React.FC = () => {
     endDate,
   });
 
+  const { progress, compiledBlob, compiledUrl, compile, reset } = useVideoCompilation();
+  const { saveCompilation } = useCompilations();
+  const [showResult, setShowResult] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
   const handleCompile = async () => {
     if (selectedClips.length === 0) {
       toast.error('Please select at least one clip');
       return;
     }
 
-    setIsCompiling(true);
-    // TODO: Implement actual video compilation via server-side FFmpeg
-    // For now, just simulate the action
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsCompiling(false);
-    toast.success(`Compilation started with ${selectedClips.length} clips!`);
+    const videoUrls = selectedClips.map(c => c.uri);
+    const blob = await compile(videoUrls);
+    
+    if (blob) {
+      setShowResult(true);
+    }
   };
+
+  const handleSaveToApp = async () => {
+    if (!compiledBlob) return;
+
+    setIsSaving(true);
+    try {
+      const journeyName = selectedJourneyId !== 'all'
+        ? journeys.find(j => j.id === selectedJourneyId)?.name
+        : undefined;
+
+      const title = journeyName
+        ? `${journeyName} Compilation`
+        : `Compilation - ${new Date().toLocaleDateString()}`;
+
+      const result = await saveCompilation({
+        title,
+        videoBlob: compiledBlob,
+        duration: totalDuration,
+        clipCount: selectedClips.length,
+        clipIds: selectedClips.map(c => c.id),
+        journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
+      });
+
+      if (result) {
+        setIsSaved(true);
+        toast.success('Saved to your Reels!');
+      } else {
+        toast.error('Failed to save. Please try again.');
+      }
+    } catch {
+      toast.error('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloseResult = () => {
+    setShowResult(false);
+    if (isSaved) {
+      reset();
+      setIsSaved(false);
+      navigate('/reels');
+    }
+  };
+
+  const isCompiling = progress.stage !== 'idle' && progress.stage !== 'done' && progress.stage !== 'error';
 
   return (
     <>
@@ -112,6 +167,22 @@ const Compile: React.FC = () => {
         totalDuration={totalDuration}
         onCompile={handleCompile}
         isCompiling={isCompiling}
+      />
+
+      {/* Compilation progress overlay */}
+      {progress.stage !== 'idle' && progress.stage !== 'done' && (
+        <CompilationProgress {...progress} />
+      )}
+
+      {/* Result sheet */}
+      <CompilationResultSheet
+        open={showResult}
+        onClose={handleCloseResult}
+        videoUrl={compiledUrl}
+        videoBlob={compiledBlob}
+        onSaveToApp={handleSaveToApp}
+        isSaving={isSaving}
+        isSaved={isSaved}
       />
 
       <BottomNav />

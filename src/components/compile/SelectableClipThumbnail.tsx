@@ -68,6 +68,15 @@ export const SelectableClipThumbnail: React.FC<SelectableClipThumbnailProps> = (
         </div>
       )}
 
+      {/* Day number badge - centered, handwritten style */}
+      {clip.dayNumber && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="font-handwritten font-bold text-2xl text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+            Day {clip.dayNumber}
+          </span>
+        </div>
+      )}
+
       {/* Duration & date */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
         <div className="flex justify-between items-end text-[10px] text-white">

@@ -90,19 +90,30 @@ export const useVideoRecording = ({
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
-      }
-      
-      // Request permission first on native iOS
-      const hasPermission = await requestCameraPermission();
-      if (!hasPermission) {
+        setStream(null);
         setCameraReady(false);
-        return null;
       }
       
-      // iOS-compatible constraints
+      // Only request Capacitor permission on first camera init (not when flipping).
+      // Calling async permission APIs breaks the user-gesture chain on iOS,
+      // which causes getUserMedia to fail for the back camera.
+      if (!facingMode) {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+          setCameraReady(false);
+          return null;
+        }
+      }
+      
+      // Use { exact } when flipping to force the specific camera.
+      // On initial open, use non-exact so the browser can fall back.
+      const facingConstraint = facingMode
+        ? { exact: facingModeRef.current }
+        : facingModeRef.current;
+
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: facingModeRef.current,
+          facingMode: facingConstraint,
           width: { ideal: 1280, max: 1920 },
           height: { ideal: 720, max: 1080 },
         },

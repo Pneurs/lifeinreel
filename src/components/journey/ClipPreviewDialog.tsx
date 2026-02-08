@@ -86,7 +86,6 @@ export const ClipPreviewDialog: React.FC<ClipPreviewDialogProps> = ({
             src={clip.uri}
             controls
             playsInline
-            autoPlay
             className="w-full h-full object-contain"
           />
         </div>

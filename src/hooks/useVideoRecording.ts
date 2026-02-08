@@ -45,6 +45,7 @@ export const useVideoRecording = ({
   const recordingMimeTypeRef = useRef<string>('video/webm');
   const isSavingRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const facingModeRef = useRef<'environment' | 'user'>('environment');
 
   // Derive: only "recorded" when we actually have a blob ready.
   const hasRecorded = recordedBlob !== null;
@@ -77,9 +78,13 @@ export const useVideoRecording = ({
   }, []);
 
   // Initialize camera with iOS-compatible constraints
-  const initCamera = useCallback(async () => {
+  const initCamera = useCallback(async (facingMode?: 'environment' | 'user') => {
     try {
       setError(null);
+
+      if (facingMode) {
+        facingModeRef.current = facingMode;
+      }
 
       // Always stop any existing stream before acquiring a new one
       if (streamRef.current) {
@@ -97,7 +102,7 @@ export const useVideoRecording = ({
       // iOS-compatible constraints
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: 'environment',
+          facingMode: facingModeRef.current,
           width: { ideal: 1280, max: 1920 },
           height: { ideal: 720, max: 1080 },
         },
@@ -481,6 +486,12 @@ export const useVideoRecording = ({
     };
   }, []);
 
+  // Flip between front and back camera
+  const flipCamera = useCallback(async () => {
+    const newMode = facingModeRef.current === 'environment' ? 'user' : 'environment';
+    await initCamera(newMode);
+  }, [initCamera]);
+
   return {
     // State
     isRecording,
@@ -491,6 +502,7 @@ export const useVideoRecording = ({
     error,
     cameraReady,
     stream,
+    facingMode: facingModeRef.current,
     
     // Config
     minDuration,
@@ -504,5 +516,6 @@ export const useVideoRecording = ({
     retake,
     saveRecording,
     setVideoRef,
+    flipCamera,
   };
 };

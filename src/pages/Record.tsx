@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Check, RotateCcw, AlertCircle } from 'lucide-react';
+import { X, Check, RotateCcw, AlertCircle, SwitchCamera } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';
@@ -43,6 +43,7 @@ const Record: React.FC = () => {
     stopRecording,
     retake,
     saveRecording,
+    flipCamera,
   } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 2, minDuration: 1 });
 
   // Initialize camera on mount
@@ -221,7 +222,7 @@ const Record: React.FC = () => {
             <div className="text-center px-8">
               <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
               <p className="text-accent text-sm mb-4">{error}</p>
-              <IOSButton variant="primary" onClick={initCamera}>
+              <IOSButton variant="primary" onClick={() => initCamera()}>
                 Try Again
               </IOSButton>
             </div>
@@ -248,7 +249,17 @@ const Record: React.FC = () => {
           </span>
         </div>
 
-        <div className="w-10" />
+        {/* Flip camera button */}
+        {!hasRecorded && (
+          <button
+            onClick={() => flipCamera()}
+            disabled={!cameraReady || isRecording}
+            className="w-10 h-10 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center disabled:opacity-40"
+          >
+            <SwitchCamera className="w-5 h-5 text-accent" />
+          </button>
+        )}
+        {hasRecorded && <div className="w-10" />}
       </div>
 
       {/* Journey indicator */}

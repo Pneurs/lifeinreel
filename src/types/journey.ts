@@ -46,6 +46,7 @@ export interface Compilation {
   clipCount: number;
   clipIds: string[];
   journeyId?: string;
+  isDraft: boolean;
   createdAt: string;
   updatedAt: string;
 }

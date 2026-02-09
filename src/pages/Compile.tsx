@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileVideo, Trash2 } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { CompileFilters } from '@/components/compile/CompileFilters';
@@ -12,6 +12,7 @@ import { useJourneys } from '@/hooks/useJourneys';
 import { useCompileClips, TagFilter } from '@/hooks/useCompileClips';
 import { useVideoCompilation } from '@/hooks/useVideoCompilation';
 import { useCompilations } from '@/hooks/useCompilations';
+import { Compilation } from '@/types/journey';
 import { toast } from 'sonner';
 
 const Compile: React.FC = () => {
@@ -39,10 +40,16 @@ const Compile: React.FC = () => {
   });
 
   const { progress, compiledBlob, compiledUrl, compile, reset } = useVideoCompilation();
-  const { saveCompilation } = useCompilations();
+  const { saveCompilation, drafts, deleteCompilation, promoteDraft } = useCompilations();
   const [showResult, setShowResult] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const savedRef = useRef(false);
+
+  // Track if save happened so we know draft is not needed
+  useEffect(() => {
+    savedRef.current = isSaved;
+  }, [isSaved]);
 
   const handleCompile = async () => {
     if (selectedClips.length === 0) {
@@ -78,6 +85,7 @@ const Compile: React.FC = () => {
         clipCount: selectedClips.length,
         clipIds: selectedClips.map(c => c.id),
         journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
+        isDraft: false,
       });
 
       if (result) {
@@ -93,12 +101,70 @@ const Compile: React.FC = () => {
     }
   };
 
-  const handleCloseResult = () => {
+  const saveDraft = useCallback(async () => {
+    if (!compiledBlob || savedRef.current) return;
+
+    try {
+      const journeyName = selectedJourneyId !== 'all'
+        ? journeys.find(j => j.id === selectedJourneyId)?.name
+        : undefined;
+
+      const title = journeyName
+        ? `${journeyName} Draft`
+        : `Draft - ${new Date().toLocaleDateString()}`;
+
+      await saveCompilation({
+        title,
+        videoBlob: compiledBlob,
+        duration: totalDuration,
+        clipCount: selectedClips.length,
+        clipIds: selectedClips.map(c => c.id),
+        journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
+        isDraft: true,
+      });
+
+      toast.info('Saved as draft');
+    } catch {
+      // Silently fail for draft saves
+      console.error('Failed to save draft');
+    }
+  }, [compiledBlob, selectedJourneyId, journeys, totalDuration, selectedClips, saveCompilation]);
+
+  const handleCloseResult = async () => {
+    if (!isSaved && compiledBlob) {
+      // Auto-save as draft
+      await saveDraft();
+    }
     setShowResult(false);
+    reset();
+    setIsSaved(false);
     if (isSaved) {
-      reset();
-      setIsSaved(false);
       navigate('/reels');
+    }
+  };
+
+  const handleBack = async () => {
+    if (compiledBlob && !savedRef.current) {
+      await saveDraft();
+    }
+    navigate(-1);
+  };
+
+  const handleDeleteDraft = async (id: string) => {
+    const ok = await deleteCompilation(id);
+    if (ok) {
+      toast.success('Draft deleted');
+    } else {
+      toast.error('Failed to delete draft');
+    }
+  };
+
+  const handlePromoteDraft = async (draft: Compilation) => {
+    const ok = await promoteDraft(draft.id);
+    if (ok) {
+      toast.success('Moved to Reels!');
+    } else {
+      toast.error('Failed to save. Please try again.');
     }
   };
 
@@ -111,7 +177,7 @@ const Compile: React.FC = () => {
         <div className="px-5 pt-12 pb-4 bg-card border-b border-border">
           <div className="flex items-center gap-4 mb-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -135,6 +201,60 @@ const Compile: React.FC = () => {
             onEndDateChange={setEndDate}
           />
         </div>
+
+        {/* Drafts section */}
+        {drafts.length > 0 && (
+          <div className="px-5 pt-4 pb-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Drafts ({drafts.length})
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+              {drafts.map((draft) => (
+                <div
+                  key={draft.id}
+                  className="flex-shrink-0 w-40 rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  <div className="relative aspect-video bg-muted">
+                    {draft.videoUrl ? (
+                      <video
+                        src={draft.videoUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FileVideo className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="absolute top-1 right-1 bg-primary/90 text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded">
+                      Draft
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-foreground truncate">{draft.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{draft.clipCount} clips</p>
+                    <div className="flex gap-1 mt-1.5">
+                      <button
+                        onClick={() => handlePromoteDraft(draft)}
+                        className="flex-1 text-[10px] font-medium text-primary bg-primary/10 rounded py-1 hover:bg-primary/20 transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        className="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Clips Grid */}
         <div className="px-5 py-6 pb-48">

@@ -200,24 +200,25 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             }
             ctx.drawImage(video, 0, 0, width, height);
 
-            // Draw "Day X" badge overlay
+            // Draw "Day X" badge overlay — lower center, 25% above bottom
             if (dayNumber != null) {
               const fontSize = Math.round(width * 0.07);
               ctx.save();
               ctx.font = `bold ${fontSize}px 'Caveat', cursive`;
-              ctx.textAlign = 'left';
-              ctx.textBaseline = 'top';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
               const text = `Day ${dayNumber}`;
               const metrics = ctx.measureText(text);
               const padX = fontSize * 0.6;
               const padY = fontSize * 0.35;
-              const badgeX = fontSize * 0.8;
-              const badgeY = fontSize * 0.8;
-              // Semi-transparent background
-              ctx.fillStyle = 'hsla(37, 92%, 50%, 0.85)';
               const badgeW = metrics.width + padX * 2;
               const badgeH = fontSize + padY * 2;
+              // Center horizontally, 25% above the bottom
+              const badgeX = (width - badgeW) / 2;
+              const badgeY = height * 0.75 - badgeH / 2;
               const radius = badgeH * 0.3;
+              // Semi-transparent primary background
+              ctx.fillStyle = 'hsla(37, 92%, 50%, 0.85)';
               ctx.beginPath();
               ctx.moveTo(badgeX + radius, badgeY);
               ctx.lineTo(badgeX + badgeW - radius, badgeY);
@@ -230,9 +231,9 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               ctx.quadraticCurveTo(badgeX, badgeY, badgeX + radius, badgeY);
               ctx.closePath();
               ctx.fill();
-              // White text
+              // White text — centered in badge
               ctx.fillStyle = '#FFFFFF';
-              ctx.fillText(text, badgeX + padX, badgeY + padY);
+              ctx.fillText(text, width / 2, height * 0.75);
               ctx.restore();
             }
 

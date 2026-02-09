@@ -14,6 +14,7 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import DraftsSection from '@/components/profile/DraftsSection';
 
 interface SettingItemProps {
   icon: React.ElementType;
@@ -91,6 +92,9 @@ const Profile: React.FC = () => {
             <p className="text-sm text-primary-foreground/80">Unlock unlimited journeys</p>
           </div>
         </div>
+
+        {/* Draft videos */}
+        <DraftsSection />
 
         {/* Settings sections */}
         <div className="space-y-6">

@@ -93,12 +93,11 @@ const Reels: React.FC = () => {
         <MobileLayout>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Reels</h1>
               <p className="text-muted-foreground">Your generated videos</p>
             </div>
             <IOSButton variant="primary" size="sm" onClick={() => navigate('/compile')}>
               <Plus className="w-4 h-4" />
-              Create New
+              Create Reel
             </IOSButton>
           </div>
 
@@ -141,11 +140,10 @@ const Reels: React.FC = () => {
       <div className="fixed inset-0 max-w-md mx-auto bg-background z-10">
         {/* Header overlay */}
         <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-background/80 to-transparent px-5 pt-12 pb-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Reels</h1>
-            <IOSButton variant="ghost" size="sm" onClick={() => navigate('/compile')}>
+          <div className="flex items-center justify-end">
+            <IOSButton variant="primary" size="sm" onClick={() => navigate('/compile')}>
               <Plus className="w-4 h-4" />
-              Create
+              Create Reel
             </IOSButton>
           </div>
         </div>

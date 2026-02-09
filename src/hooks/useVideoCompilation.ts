@@ -214,7 +214,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               const badgeX = fontSize * 0.8;
               const badgeY = fontSize * 0.8;
               // Semi-transparent background
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+              ctx.fillStyle = 'hsla(37, 92%, 50%, 0.85)';
               const badgeW = metrics.width + padX * 2;
               const badgeH = fontSize + padY * 2;
               const radius = badgeH * 0.3;

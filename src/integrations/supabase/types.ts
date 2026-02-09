@@ -22,6 +22,7 @@ export type Database = {
           description: string | null
           duration: number
           id: string
+          is_draft: boolean
           journey_id: string | null
           thumbnail_url: string | null
           title: string
@@ -36,6 +37,7 @@ export type Database = {
           description?: string | null
           duration?: number
           id?: string
+          is_draft?: boolean
           journey_id?: string | null
           thumbnail_url?: string | null
           title: string
@@ -50,6 +52,7 @@ export type Database = {
           description?: string | null
           duration?: number
           id?: string
+          is_draft?: boolean
           journey_id?: string | null
           thumbnail_url?: string | null
           title?: string

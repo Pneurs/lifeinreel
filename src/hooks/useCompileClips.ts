@@ -33,7 +33,7 @@ export const useCompileClips = (options: UseCompileClipsOptions) => {
       let query = supabase
         .from('video_clips')
         .select('*')
-        .order('captured_at', { ascending: false });
+        .order('captured_at', { ascending: true });
 
       // Filter by journey if specified
       if (journeyId) {

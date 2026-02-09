@@ -50,8 +50,8 @@ const Compile: React.FC = () => {
       return;
     }
 
-    const videoUrls = selectedClips.map(c => c.uri);
-    const blob = await compile(videoUrls);
+    const clipMetas = selectedClips.map(c => ({ url: c.uri, dayNumber: c.dayNumber }));
+    const blob = await compile(clipMetas);
     
     if (blob) {
       setShowResult(true);

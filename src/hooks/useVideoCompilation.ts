@@ -8,11 +8,16 @@ interface CompilationProgress {
   message: string;
 }
 
+interface ClipMeta {
+  url: string;
+  dayNumber?: number;
+}
+
 interface UseVideoCompilationReturn {
   progress: CompilationProgress;
   compiledBlob: Blob | null;
   compiledUrl: string | null;
-  compile: (videoUrls: string[]) => Promise<Blob | null>;
+  compile: (clips: ClipMeta[]) => Promise<Blob | null>;
   reset: () => void;
 }
 
@@ -69,11 +74,12 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
     });
   };
 
-  const compile = useCallback(async (videoUrls: string[]): Promise<Blob | null> => {
-    if (videoUrls.length === 0) return null;
+  const compile = useCallback(async (clips: ClipMeta[]): Promise<Blob | null> => {
+    if (clips.length === 0) return null;
 
     abortRef.current = false;
-    const totalClips = videoUrls.length;
+    const totalClips = clips.length;
+    const videoUrls = clips.map(c => c.url);
 
     setProgress({
       stage: 'loading',
@@ -184,6 +190,8 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
           video.muted = false;
         }
 
+        const dayNumber = clips[i].dayNumber;
+
         await new Promise<void>((resolve) => {
           const drawFrame = () => {
             if (video.paused || video.ended) {
@@ -191,6 +199,43 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               return;
             }
             ctx.drawImage(video, 0, 0, width, height);
+
+            // Draw "Day X" badge overlay
+            if (dayNumber != null) {
+              const fontSize = Math.round(width * 0.07);
+              ctx.save();
+              ctx.font = `bold ${fontSize}px 'Caveat', cursive`;
+              ctx.textAlign = 'left';
+              ctx.textBaseline = 'top';
+              const text = `Day ${dayNumber}`;
+              const metrics = ctx.measureText(text);
+              const padX = fontSize * 0.5;
+              const padY = fontSize * 0.3;
+              const badgeX = fontSize * 0.5;
+              const badgeY = fontSize * 0.5;
+              // Semi-transparent background
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+              const badgeW = metrics.width + padX * 2;
+              const badgeH = fontSize + padY * 2;
+              const radius = badgeH * 0.3;
+              ctx.beginPath();
+              ctx.moveTo(badgeX + radius, badgeY);
+              ctx.lineTo(badgeX + badgeW - radius, badgeY);
+              ctx.quadraticCurveTo(badgeX + badgeW, badgeY, badgeX + badgeW, badgeY + radius);
+              ctx.lineTo(badgeX + badgeW, badgeY + badgeH - radius);
+              ctx.quadraticCurveTo(badgeX + badgeW, badgeY + badgeH, badgeX + badgeW - radius, badgeY + badgeH);
+              ctx.lineTo(badgeX + radius, badgeY + badgeH);
+              ctx.quadraticCurveTo(badgeX, badgeY + badgeH, badgeX, badgeY + badgeH - radius);
+              ctx.lineTo(badgeX, badgeY + radius);
+              ctx.quadraticCurveTo(badgeX, badgeY, badgeX + radius, badgeY);
+              ctx.closePath();
+              ctx.fill();
+              // White text
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillText(text, badgeX + padX, badgeY + padY);
+              ctx.restore();
+            }
+
             requestAnimationFrame(drawFrame);
           };
 
@@ -198,7 +243,6 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
           video.play().then(() => {
             drawFrame();
           }).catch(() => {
-            // If autoplay fails, just resolve
             resolve();
           });
         });

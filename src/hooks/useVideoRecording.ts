@@ -114,8 +114,9 @@ export const useVideoRecording = ({
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode: facingConstraint,
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 },
+          frameRate: { ideal: 30 },
         },
         audio: {
           echoCancellation: true,
@@ -194,7 +195,10 @@ export const useVideoRecording = ({
 
       recordingMimeTypeRef.current = mimeType;
       
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = new MediaRecorder(stream, { 
+        mimeType,
+        videoBitsPerSecond: 8_000_000, // 8 Mbps for high quality
+      });
       
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {

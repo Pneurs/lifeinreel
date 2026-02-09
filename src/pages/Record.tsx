@@ -213,11 +213,10 @@ const Record: React.FC = () => {
             <video
               ref={previewVideoRef}
               src={previewUrl}
-              autoPlay
               loop
               playsInline
               controls
-              muted={isMuted}
+              preload="auto"
               className="flex-1 w-full object-contain bg-black"
             />
           </div>

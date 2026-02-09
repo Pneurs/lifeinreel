@@ -123,7 +123,7 @@ const Compile: React.FC = () => {
         isDraft: true,
       });
 
-      toast.info('Saved as draft');
+      toast.info('Video saved to draft. Find it in your Profile');
     } catch {
       // Silently fail for draft saves
       console.error('Failed to save draft');

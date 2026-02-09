@@ -18,7 +18,7 @@ const Record: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
     (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
@@ -196,9 +196,15 @@ const Record: React.FC = () => {
               </span>
               <button
                 onClick={() => {
-                  setIsMuted(m => !m);
+                  const next = !isMuted;
+                  setIsMuted(next);
                   if (previewVideoRef.current) {
-                    previewVideoRef.current.muted = !previewVideoRef.current.muted;
+                    previewVideoRef.current.muted = next;
+                    // If unmuting, ensure playback is started via this user gesture
+                    // so audio binds to the media volume channel
+                    if (!next && previewVideoRef.current.paused) {
+                      previewVideoRef.current.play().catch(() => {});
+                    }
                   }
                 }}
                 className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center"
@@ -213,9 +219,11 @@ const Record: React.FC = () => {
             <video
               ref={previewVideoRef}
               src={previewUrl}
+              autoPlay
               loop
               playsInline
               controls
+              muted
               preload="auto"
               className="flex-1 w-full object-contain bg-black"
             />

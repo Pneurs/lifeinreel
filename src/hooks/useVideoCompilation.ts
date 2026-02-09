@@ -159,7 +159,10 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
         const video = videos[i];
         video.currentTime = 0;
-        video.muted = true;
+        // Do NOT set video.muted = true here — muting prevents
+        // createMediaElementSource from capturing audio data.
+        // The createMediaElementSource call below already disconnects
+        // the element from speakers, so no audio will play out loud.
 
         setProgress({
           stage: 'processing',
@@ -173,9 +176,12 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
         try {
           const source = audioCtx.createMediaElementSource(video);
           source.connect(destination);
-          // Do NOT connect to audioCtx.destination – that would play audio out loud
+          // Unmute so audio data flows through MediaElementSource
+          // (createMediaElementSource disconnects from speakers, so no sound leaks)
+          video.muted = false;
         } catch {
           // Audio source may already be connected or unavailable
+          video.muted = false;
         }
 
         await new Promise<void>((resolve) => {

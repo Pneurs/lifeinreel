@@ -209,10 +209,10 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               ctx.textBaseline = 'top';
               const text = `Day ${dayNumber}`;
               const metrics = ctx.measureText(text);
-              const padX = fontSize * 0.5;
-              const padY = fontSize * 0.3;
-              const badgeX = fontSize * 0.5;
-              const badgeY = fontSize * 0.5;
+              const padX = fontSize * 0.6;
+              const padY = fontSize * 0.35;
+              const badgeX = fontSize * 0.8;
+              const badgeY = fontSize * 0.8;
               // Semi-transparent background
               ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
               const badgeW = metrics.width + padX * 2;

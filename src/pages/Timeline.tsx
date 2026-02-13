@@ -185,11 +185,12 @@ const Timeline: React.FC = () => {
                   onClick={() => setPreviewClip(clip)}
                   className="relative aspect-[9/16] rounded-xl overflow-hidden bg-muted border border-border/50"
                 >
-                  <img
-                    src={clip.thumbnail}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                  <video
+                    src={clip.uri}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover pointer-events-none"
                   />
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 active:opacity-100 transition-opacity">
                     <Play className="w-6 h-6 text-primary-foreground" fill="currentColor" />

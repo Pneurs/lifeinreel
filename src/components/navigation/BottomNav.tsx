@@ -42,7 +42,7 @@ export const BottomNav: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-lg border-t border-border pb-6 pt-2 px-4">
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/95 backdrop-blur-lg border-t border-border pb-6 pt-2 px-4 z-50">
         <nav className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;

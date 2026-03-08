@@ -362,15 +362,7 @@ const Record: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-8">
-            <IOSButton
-              variant="ghost"
-              size="iconLg"
-              onClick={retake}
-              className="bg-background/20 backdrop-blur-sm"
-            >
-              <RotateCcw className="w-6 h-6 text-accent" />
-            </IOSButton>
+          <div className="flex justify-center">
             <IOSButton
               variant="primary"
               size="iconLg"

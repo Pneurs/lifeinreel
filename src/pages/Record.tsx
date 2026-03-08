@@ -29,6 +29,7 @@ const Record: React.FC = () => {
 
   const {
     isRecording,
+    isProcessing,
     recordingTime,
     hasRecorded,
     previewUrl,
@@ -45,7 +46,7 @@ const Record: React.FC = () => {
     retake,
     saveRecording,
     flipCamera,
-  } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 2, minDuration: 1 });
+  } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 5, minDuration: 2 });
 
   // Initialize camera on mount
   useEffect(() => {

@@ -19,6 +19,7 @@ const Record: React.FC = () => {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const retakeCooldownRef = useRef(false);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
     (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
@@ -68,12 +69,15 @@ const Record: React.FC = () => {
 
   const handleRetake = () => {
     setIsMuted(true);
+    retakeCooldownRef.current = true;
     retake();
+    // Prevent the lingering mouse/touch event from auto-starting recording
+    setTimeout(() => { retakeCooldownRef.current = false; }, 300);
   };
 
   // Handle touch/mouse events for recording
   const handleStartRecording = () => {
-    if (cameraReady && !hasRecorded) {
+    if (cameraReady && !hasRecorded && !retakeCooldownRef.current) {
       startRecording();
     }
   };

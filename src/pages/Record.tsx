@@ -67,17 +67,19 @@ const Record: React.FC = () => {
     }
   }, [stream, hasRecorded]);
 
-  const handleRetake = () => {
+  const handleRetake = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsMuted(true);
     retakeCooldownRef.current = true;
     retake();
-    // Prevent the lingering mouse/touch event from auto-starting recording
-    setTimeout(() => { retakeCooldownRef.current = false; }, 300);
+    // Guard long enough for all lingering touch/mouse/click events to pass
+    setTimeout(() => { retakeCooldownRef.current = false; }, 600);
   };
 
   // Handle touch/mouse events for recording
   const handleStartRecording = () => {
-    if (cameraReady && !hasRecorded && !retakeCooldownRef.current) {
+    if (cameraReady && !hasRecorded && !retakeCooldownRef.current && !isRecording) {
       startRecording();
     }
   };

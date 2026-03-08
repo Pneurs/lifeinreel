@@ -208,11 +208,9 @@ export const useVideoRecording = ({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        recordedBlobRef.current = blob;
-        setRecordedBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setPreviewUrl(url);
+        const rawBlob = new Blob(chunksRef.current, { type: mimeType });
+        // Speed up the raw recording to ~2s
+        speedUpBlob(rawBlob, mimeType);
       };
 
       mediaRecorderRef.current = mediaRecorder;

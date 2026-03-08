@@ -307,6 +307,7 @@ export const useVideoRecording = ({
       recordedBlobRef.current = speedBlob;
       setRecordedBlob(speedBlob);
       const url = URL.createObjectURL(speedBlob);
+      previewUrlRef.current = url;
       setPreviewUrl(url);
     } catch (err) {
       console.warn('[speedUpBlob] Processing failed, using raw blob:', err);

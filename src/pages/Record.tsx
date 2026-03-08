@@ -44,6 +44,7 @@ const Record: React.FC = () => {
     startRecording,
     stopRecording,
     saveRecording,
+    retake,
     flipCamera,
   } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 5, minDuration: 2 });
 

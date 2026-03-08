@@ -391,7 +391,7 @@ const Record: React.FC = () => {
             ? 'Processing your clip...'
             : hasRecorded 
               ? selectedJourneyId 
-                ? 'Save your moment'
+                ? 'Save your moment or retake'
                 : 'Tap save to choose a journey'
               : cameraReady 
                 ? 'Hold to record (up to 5s)' 

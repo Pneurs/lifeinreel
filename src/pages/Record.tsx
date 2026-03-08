@@ -19,6 +19,7 @@ const Record: React.FC = () => {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const retakeCooldownRef = useRef(false);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
     (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;

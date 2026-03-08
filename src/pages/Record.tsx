@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Check, RotateCcw, AlertCircle, SwitchCamera, Volume2, VolumeX } from 'lucide-react';
+import { X, Check, SwitchCamera, Volume2, VolumeX } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';

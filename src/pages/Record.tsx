@@ -29,6 +29,7 @@ const Record: React.FC = () => {
 
   const {
     isRecording,
+    isProcessing,
     recordingTime,
     hasRecorded,
     previewUrl,
@@ -45,7 +46,7 @@ const Record: React.FC = () => {
     retake,
     saveRecording,
     flipCamera,
-  } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 2, minDuration: 1 });
+  } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 5, minDuration: 2 });
 
   // Initialize camera on mount
   useEffect(() => {
@@ -230,8 +231,18 @@ const Record: React.FC = () => {
           </div>
         ) : null}
 
+        {/* Processing state - speed up in progress */}
+        {isProcessing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-accent text-sm">Speeding up your clip...</p>
+            </div>
+          </div>
+        )}
+
         {/* Loading state for camera */}
-        {!cameraReady && !error && (
+        {!cameraReady && !error && !isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -376,13 +387,15 @@ const Record: React.FC = () => {
         )}
 
         <p className="text-center text-accent/60 text-sm mt-4">
-          {hasRecorded 
-            ? selectedJourneyId 
-              ? 'Save your moment or retake'
-              : 'Tap save to choose a journey'
-            : cameraReady 
-              ? 'Hold to record' 
-              : 'Waiting for camera...'}
+          {isProcessing
+            ? 'Processing your clip...'
+            : hasRecorded 
+              ? selectedJourneyId 
+                ? 'Save your moment or retake'
+                : 'Tap save to choose a journey'
+              : cameraReady 
+                ? 'Hold to record (up to 5s)' 
+                : 'Waiting for camera...'}
         </p>
       </div>
 

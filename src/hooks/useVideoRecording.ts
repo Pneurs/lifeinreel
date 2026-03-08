@@ -24,11 +24,12 @@ const isIOS = (): boolean => {
 
 export const useVideoRecording = ({ 
   journeyId, 
-  maxDuration = 2, 
-  minDuration = 1 
+  maxDuration = 5, 
+  minDuration = 2 
 }: UseVideoRecordingProps) => {
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -207,11 +208,9 @@ export const useVideoRecording = ({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        recordedBlobRef.current = blob;
-        setRecordedBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setPreviewUrl(url);
+        const rawBlob = new Blob(chunksRef.current, { type: mimeType });
+        // Speed up the raw recording to ~2s
+        speedUpBlob(rawBlob, mimeType);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -234,6 +233,91 @@ export const useVideoRecording = ({
       setError('Failed to start recording');
     }
   }, [stream, maxDuration, previewUrl]);
+
+  // Speed up a raw blob by playing at 2.5x into a canvas and re-recording
+  const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {
+    setIsProcessing(true);
+    try {
+      const speedFactor = 2.5;
+      const video = document.createElement('video');
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.src = URL.createObjectURL(rawBlob);
+
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => resolve();
+        video.onerror = () => reject(new Error('Failed to load video for processing'));
+        setTimeout(() => reject(new Error('Video load timeout')), 5000);
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 1080;
+      canvas.height = video.videoHeight || 1920;
+      const ctx = canvas.getContext('2d')!;
+
+      const canvasStream = canvas.captureStream(30);
+
+      // Determine output mime
+      let outputMime = mimeType;
+      if (!MediaRecorder.isTypeSupported(outputMime)) {
+        outputMime = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+      }
+
+      const recorder = new MediaRecorder(canvasStream, {
+        mimeType: outputMime,
+        videoBitsPerSecond: 8_000_000,
+      });
+
+      const outputChunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) outputChunks.push(e.data);
+      };
+
+      const recorderDone = new Promise<Blob>((resolve) => {
+        recorder.onstop = () => {
+          resolve(new Blob(outputChunks, { type: outputMime }));
+        };
+      });
+
+      recorder.start(100);
+      video.playbackRate = speedFactor;
+      await video.play();
+
+      // Draw frames at ~30fps until video ends
+      const drawFrame = () => {
+        if (video.ended || video.paused) {
+          recorder.stop();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(drawFrame);
+      };
+      requestAnimationFrame(drawFrame);
+
+      video.onended = () => {
+        if (recorder.state !== 'inactive') recorder.stop();
+      };
+
+      const speedBlob = await recorderDone;
+      URL.revokeObjectURL(video.src);
+
+      recordingMimeTypeRef.current = outputMime;
+      recordedBlobRef.current = speedBlob;
+      setRecordedBlob(speedBlob);
+      const url = URL.createObjectURL(speedBlob);
+      setPreviewUrl(url);
+    } catch (err) {
+      console.warn('[speedUpBlob] Processing failed, using raw blob:', err);
+      // Fallback: use raw blob as-is
+      recordedBlobRef.current = rawBlob;
+      setRecordedBlob(rawBlob);
+      const url = URL.createObjectURL(rawBlob);
+      setPreviewUrl(url);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -426,7 +510,7 @@ export const useVideoRecording = ({
             journey_id: targetJourneyId,
             user_id: effectiveUser.id,
             video_url: urlData.publicUrl,
-            duration: Math.min(recordingTime, maxDuration),
+            duration: Math.min(recordingTime, maxDuration) / 2.5,
             week_number: getWeekNumber(),
           });
 
@@ -510,6 +594,7 @@ export const useVideoRecording = ({
   return {
     // State
     isRecording,
+    isProcessing,
     recordingTime,
     hasRecorded,
     previewUrl,

@@ -66,6 +66,11 @@ const Record: React.FC = () => {
     }
   }, [stream, hasRecorded]);
 
+  const handleRetake = () => {
+    setIsMuted(true);
+    retake();
+  };
+
   // Handle touch/mouse events for recording
   const handleStartRecording = () => {
     if (cameraReady && !hasRecorded) {

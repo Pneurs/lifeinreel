@@ -594,6 +594,7 @@ export const useVideoRecording = ({
   return {
     // State
     isRecording,
+    isProcessing,
     recordingTime,
     hasRecorded,
     previewUrl,

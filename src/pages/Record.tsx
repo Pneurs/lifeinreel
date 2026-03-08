@@ -387,13 +387,15 @@ const Record: React.FC = () => {
         )}
 
         <p className="text-center text-accent/60 text-sm mt-4">
-          {hasRecorded 
-            ? selectedJourneyId 
-              ? 'Save your moment or retake'
-              : 'Tap save to choose a journey'
-            : cameraReady 
-              ? 'Hold to record' 
-              : 'Waiting for camera...'}
+          {isProcessing
+            ? 'Processing your clip...'
+            : hasRecorded 
+              ? selectedJourneyId 
+                ? 'Save your moment or retake'
+                : 'Tap save to choose a journey'
+              : cameraReady 
+                ? 'Hold to record (up to 5s)' 
+                : 'Waiting for camera...'}
         </p>
       </div>
 

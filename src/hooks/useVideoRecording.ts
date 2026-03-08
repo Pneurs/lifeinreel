@@ -349,6 +349,7 @@ export const useVideoRecording = ({
 
     // Reset recording state
     setIsRecording(false);
+    setIsProcessing(false);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
     setRecordingTime(0);

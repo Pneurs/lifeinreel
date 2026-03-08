@@ -499,17 +499,57 @@ export const useVideoRecording = ({
     const contentType = isMP4 ? 'video/mp4' : 'video/webm';
     const fileTimestamp = Date.now();
     const fileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}.${extension}`;
+    const thumbnailFileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}_thumb.jpg`;
+
+    // Generate thumbnail from video blob
+    const generateThumbnail = async (blob: Blob): Promise<Blob | null> => {
+      try {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.src = URL.createObjectURL(blob);
+
+        await new Promise<void>((resolve, reject) => {
+          video.onloadeddata = () => resolve();
+          video.onerror = () => reject(new Error('Failed to load video for thumbnail'));
+          setTimeout(() => reject(new Error('Thumbnail video load timeout')), 5000);
+        });
+
+        // Seek to 0.1s (first meaningful frame)
+        video.currentTime = 0.1;
+        await new Promise<void>((resolve) => {
+          video.onseeked = () => resolve();
+          setTimeout(() => resolve(), 2000);
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(video.videoWidth, 480);
+        canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        URL.revokeObjectURL(video.src);
+
+        return await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.8);
+        });
+      } catch (err) {
+        console.warn('[generateThumbnail] Failed:', err);
+        return null;
+      }
+    };
 
     const attemptSave = async (attempt: number): Promise<SaveRecordingResult> => {
       console.log(`[saveRecording] Attempt ${attempt} starting...`);
 
       try {
-        // Upload to storage - always use upsert for idempotency
+        // Upload video to storage
         const { error: uploadError } = await supabase.storage
           .from('videos')
           .upload(fileName, blobToSave, {
             contentType,
-            upsert: true, // Always upsert for idempotency
+            upsert: true,
           });
 
         if (uploadError) {
@@ -518,6 +558,29 @@ export const useVideoRecording = ({
         }
 
         console.log(`[saveRecording] Attempt ${attempt} upload successful`);
+
+        // Generate and upload thumbnail (non-blocking — don't fail save if this fails)
+        let thumbnailUrl: string | null = null;
+        try {
+          const thumbBlob = await generateThumbnail(blobToSave);
+          if (thumbBlob) {
+            const { error: thumbError } = await supabase.storage
+              .from('videos')
+              .upload(thumbnailFileName, thumbBlob, {
+                contentType: 'image/jpeg',
+                upsert: true,
+              });
+            if (!thumbError) {
+              const { data: thumbUrlData } = supabase.storage
+                .from('videos')
+                .getPublicUrl(thumbnailFileName);
+              thumbnailUrl = thumbUrlData.publicUrl;
+              console.log('[saveRecording] Thumbnail uploaded:', thumbnailUrl);
+            }
+          }
+        } catch (thumbErr) {
+          console.warn('[saveRecording] Thumbnail generation failed, continuing without:', thumbErr);
+        }
 
         // Get public URL
         const { data: urlData } = supabase.storage
@@ -531,6 +594,7 @@ export const useVideoRecording = ({
             journey_id: targetJourneyId,
             user_id: effectiveUser.id,
             video_url: urlData.publicUrl,
+            thumbnail_url: thumbnailUrl,
             duration: Math.min(recordingTime, maxDuration) / 2.5,
             week_number: getWeekNumber(),
           });

@@ -234,7 +234,7 @@ export const useVideoRecording = ({
       console.error('Recording error:', err);
       setError('Failed to start recording');
     }
-  }, [stream, maxDuration, previewUrl]);
+  }, [stream, maxDuration]);
 
   // Speed up a raw blob by playing at 2.5x into a canvas and re-recording
   const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {

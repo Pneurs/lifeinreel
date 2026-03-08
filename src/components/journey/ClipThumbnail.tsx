@@ -53,7 +53,7 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
         clip.isHighlight ? 'ring-primary' : 'ring-transparent'
       )}
     >
-      {/* Video element or poster */}
+      {/* Video/thumbnail display */}
       {clip.uri ? (
         isPlaying ? (
           <video
@@ -64,6 +64,13 @@ export const ClipThumbnail: React.FC<ClipThumbnailProps> = ({
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
             onEnded={() => setIsPlaying(false)}
+          />
+        ) : clip.thumbnail && clip.thumbnail !== clip.uri ? (
+          <img
+            src={clip.thumbnail}
+            alt="Clip thumbnail"
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <video

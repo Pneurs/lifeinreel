@@ -66,6 +66,11 @@ const Record: React.FC = () => {
     }
   }, [stream, hasRecorded]);
 
+  const handleRetake = () => {
+    setIsMuted(true);
+    retake();
+  };
+
   // Handle touch/mouse events for recording
   const handleStartRecording = () => {
     if (cameraReady && !hasRecorded) {
@@ -366,7 +371,7 @@ const Record: React.FC = () => {
             <IOSButton
               variant="ghost"
               size="iconLg"
-              onClick={retake}
+              onClick={handleRetake}
               className="bg-background/20 backdrop-blur-sm"
             >
               <RotateCcw className="w-6 h-6 text-accent" />

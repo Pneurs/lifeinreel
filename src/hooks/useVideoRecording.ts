@@ -33,6 +33,7 @@ export const useVideoRecording = ({
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -178,8 +179,9 @@ export const useVideoRecording = ({
     setRecordingTime(0);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
       setPreviewUrl(null);
     }
 
@@ -232,7 +234,7 @@ export const useVideoRecording = ({
       console.error('Recording error:', err);
       setError('Failed to start recording');
     }
-  }, [stream, maxDuration, previewUrl]);
+  }, [stream, maxDuration]);
 
   // Speed up a raw blob by playing at 2.5x into a canvas and re-recording
   const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {
@@ -306,6 +308,7 @@ export const useVideoRecording = ({
       recordedBlobRef.current = speedBlob;
       setRecordedBlob(speedBlob);
       const url = URL.createObjectURL(speedBlob);
+      previewUrlRef.current = url;
       setPreviewUrl(url);
     } catch (err) {
       console.warn('[speedUpBlob] Processing failed, using raw blob:', err);
@@ -313,6 +316,7 @@ export const useVideoRecording = ({
       recordedBlobRef.current = rawBlob;
       setRecordedBlob(rawBlob);
       const url = URL.createObjectURL(rawBlob);
+      previewUrlRef.current = url;
       setPreviewUrl(url);
     } finally {
       setIsProcessing(false);
@@ -333,8 +337,10 @@ export const useVideoRecording = ({
   }, []);
 
   // Retake - fully reset recording state and re-initialize camera fresh
-  // Uses refs instead of state to avoid stale closures (the "click twice" bug)
+  // Uses refs exclusively to avoid stale closures
   const retake = useCallback(async () => {
+    console.log('[retake] Starting retake...');
+    
     // Stop any lingering timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -356,15 +362,17 @@ export const useVideoRecording = ({
     chunksRef.current = [];
     setError(null);
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    // Use ref to avoid stale closure on previewUrl
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
       setPreviewUrl(null);
     }
 
-    // initCamera() now handles stopping the old stream via streamRef
-    // so we don't need to manually stop it here (avoids stale closure on `stream`)
+    // initCamera() handles stopping the old stream via streamRef
     await initCamera();
-  }, [previewUrl, initCamera]);
+    console.log('[retake] Camera re-initialized');
+  }, [initCamera]);
 
   // Calculate week number from journey start
   const getWeekNumber = (): number => {

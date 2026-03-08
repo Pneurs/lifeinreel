@@ -315,6 +315,7 @@ export const useVideoRecording = ({
       recordedBlobRef.current = rawBlob;
       setRecordedBlob(rawBlob);
       const url = URL.createObjectURL(rawBlob);
+      previewUrlRef.current = url;
       setPreviewUrl(url);
     } finally {
       setIsProcessing(false);

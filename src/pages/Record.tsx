@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { X, Check, RotateCcw, AlertCircle, SwitchCamera, Volume2, VolumeX } from 'lucide-react';
+import { X, Check, AlertCircle, SwitchCamera, Volume2, VolumeX } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import { cn } from '@/lib/utils';
 import { useVideoRecording } from '@/hooks/useVideoRecording';
@@ -43,7 +43,6 @@ const Record: React.FC = () => {
     stopCamera,
     startRecording,
     stopRecording,
-    retake,
     saveRecording,
     flipCamera,
   } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 5, minDuration: 2 });
@@ -362,15 +361,7 @@ const Record: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-8">
-            <IOSButton
-              variant="ghost"
-              size="iconLg"
-              onClick={retake}
-              className="bg-background/20 backdrop-blur-sm"
-            >
-              <RotateCcw className="w-6 h-6 text-accent" />
-            </IOSButton>
+          <div className="flex justify-center">
             <IOSButton
               variant="primary"
               size="iconLg"
@@ -391,7 +382,7 @@ const Record: React.FC = () => {
             ? 'Processing your clip...'
             : hasRecorded 
               ? selectedJourneyId 
-                ? 'Save your moment or retake'
+                ? 'Save your moment'
                 : 'Tap save to choose a journey'
               : cameraReady 
                 ? 'Hold to record (up to 5s)' 

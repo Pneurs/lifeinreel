@@ -510,7 +510,7 @@ export const useVideoRecording = ({
             journey_id: targetJourneyId,
             user_id: effectiveUser.id,
             video_url: urlData.publicUrl,
-            duration: Math.min(recordingTime, maxDuration),
+            duration: Math.min(recordingTime, maxDuration) / 2.5,
             week_number: getWeekNumber(),
           });
 

@@ -231,8 +231,18 @@ const Record: React.FC = () => {
           </div>
         ) : null}
 
+        {/* Processing state - speed up in progress */}
+        {isProcessing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-accent text-sm">Speeding up your clip...</p>
+            </div>
+          </div>
+        )}
+
         {/* Loading state for camera */}
-        {!cameraReady && !error && (
+        {!cameraReady && !error && !isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />

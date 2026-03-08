@@ -336,9 +336,8 @@ export const useVideoRecording = ({
     setIsRecording(false);
   }, []);
 
-  // Retake - fully reset recording state and re-initialize camera fresh
-  // Uses refs exclusively to avoid stale closures
-  const retake = useCallback(async () => {
+  // Retake - reset recording state and reuse existing camera stream
+  const retake = useCallback(() => {
     console.log('[retake] Starting retake...');
     
     // Stop any lingering timer first
@@ -362,16 +361,29 @@ export const useVideoRecording = ({
     chunksRef.current = [];
     setError(null);
 
-    // Use ref to avoid stale closure on previewUrl
+    // Revoke old preview URL
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
       setPreviewUrl(null);
     }
 
-    // initCamera() handles stopping the old stream via streamRef
-    await initCamera();
-    console.log('[retake] Camera re-initialized');
+    // Check if existing stream is still alive; if so, reuse it
+    const existingStream = streamRef.current;
+    if (existingStream && existingStream.active && existingStream.getVideoTracks().some(t => t.readyState === 'live')) {
+      console.log('[retake] Reusing existing camera stream');
+      // Re-trigger the stream attachment effect by toggling stream state
+      setStream(null);
+      // Use microtask to ensure React processes the null first, then sets the live stream
+      queueMicrotask(() => {
+        setStream(existingStream);
+        setCameraReady(true);
+      });
+    } else {
+      // Stream is dead (e.g. iOS corruption), re-initialize
+      console.log('[retake] Stream dead, re-initializing camera');
+      initCamera();
+    }
   }, [initCamera]);
 
   // Calculate week number from journey start

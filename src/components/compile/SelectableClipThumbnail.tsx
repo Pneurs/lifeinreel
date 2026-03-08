@@ -25,8 +25,15 @@ export const SelectableClipThumbnail: React.FC<SelectableClipThumbnailProps> = (
         selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'opacity-60'
       )}
     >
-      {/* Video thumbnail */}
-      {clip.uri ? (
+      {/* Clip thumbnail */}
+      {clip.thumbnail && clip.thumbnail !== clip.uri ? (
+        <img
+          src={clip.thumbnail}
+          alt="Clip thumbnail"
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : clip.uri ? (
         <video
           src={clip.uri}
           className="absolute inset-0 w-full h-full object-cover"

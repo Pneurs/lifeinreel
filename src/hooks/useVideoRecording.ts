@@ -334,8 +334,10 @@ export const useVideoRecording = ({
   }, []);
 
   // Retake - fully reset recording state and re-initialize camera fresh
-  // Uses refs instead of state to avoid stale closures (the "click twice" bug)
+  // Uses refs exclusively to avoid stale closures
   const retake = useCallback(async () => {
+    console.log('[retake] Starting retake...');
+    
     // Stop any lingering timer first
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -357,15 +359,17 @@ export const useVideoRecording = ({
     chunksRef.current = [];
     setError(null);
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    // Use ref to avoid stale closure on previewUrl
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
       setPreviewUrl(null);
     }
 
-    // initCamera() now handles stopping the old stream via streamRef
-    // so we don't need to manually stop it here (avoids stale closure on `stream`)
+    // initCamera() handles stopping the old stream via streamRef
     await initCamera();
-  }, [previewUrl, initCamera]);
+    console.log('[retake] Camera re-initialized');
+  }, [initCamera]);
 
   // Calculate week number from journey start
   const getWeekNumber = (): number => {

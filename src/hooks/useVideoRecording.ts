@@ -24,11 +24,12 @@ const isIOS = (): boolean => {
 
 export const useVideoRecording = ({ 
   journeyId, 
-  maxDuration = 2, 
-  minDuration = 1 
+  maxDuration = 5, 
+  minDuration = 2 
 }: UseVideoRecordingProps) => {
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

@@ -406,7 +406,7 @@ const Record: React.FC = () => {
                 ? 'Save your moment or retake'
                 : 'Tap save to choose a journey'
               : cameraReady 
-                ? 'Hold to record (up to 5s)' 
+                ? 'Tap to record video' 
                 : 'Waiting for camera...'}
         </p>
       </div>

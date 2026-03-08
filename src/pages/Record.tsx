@@ -371,7 +371,7 @@ const Record: React.FC = () => {
             <IOSButton
               variant="ghost"
               size="iconLg"
-              onClick={retake}
+              onClick={handleRetake}
               className="bg-background/20 backdrop-blur-sm"
             >
               <RotateCcw className="w-6 h-6 text-accent" />

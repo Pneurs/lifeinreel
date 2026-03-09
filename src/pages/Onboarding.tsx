@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Sparkles, Camera, Film } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import onboardingBg from '@/assets/onboarding-bg.jpg';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const slides = [
   {

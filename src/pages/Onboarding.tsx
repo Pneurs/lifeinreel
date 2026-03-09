@@ -26,9 +26,13 @@ const slides = [
 ];
 
 const Onboarding: React.FC = () => {
+  const { user, loading } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+
+  if (loading) return null;
+  if (user) return <Navigate to="/home" replace />;
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;

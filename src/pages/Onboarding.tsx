@@ -31,9 +31,6 @@ const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
 
-  if (loading) return null;
-  if (user) return <Navigate to="/home" replace />;
-
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setCurrentSlide(emblaApi.selectedScrollSnap());
@@ -44,6 +41,9 @@ const Onboarding: React.FC = () => {
     emblaApi.on('select', onSelect);
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
+
+  if (loading) return null;
+  if (user) return <Navigate to="/home" replace />;
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {

@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Sparkles, Camera, Film } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import onboardingBg from '@/assets/onboarding-bg.jpg';
 import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const slides = [
   {
@@ -25,6 +26,7 @@ const slides = [
 ];
 
 const Onboarding: React.FC = () => {
+  const { user, loading } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
@@ -39,6 +41,9 @@ const Onboarding: React.FC = () => {
     emblaApi.on('select', onSelect);
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
+
+  if (loading) return null;
+  if (user) return <Navigate to="/home" replace />;
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {

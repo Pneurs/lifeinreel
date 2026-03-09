@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Camera, Film } from 'lucide-react';
 import { IOSButton } from '@/components/ui/ios-button';
 import onboardingBg from '@/assets/onboarding-bg.jpg';
 import { cn } from '@/lib/utils';
+import useEmblaCarousel from 'embla-carousel-react';
 
 const slides = [
   {
@@ -26,17 +27,30 @@ const slides = [
 const Onboarding: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentSlide(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  React.useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on('select', onSelect);
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi, onSelect]);
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
+      emblaApi?.scrollNext();
     } else {
       navigate('/home');
     }
   };
 
-  const slide = slides[currentSlide];
-  const Icon = slide.icon;
+  const goToSlide = (index: number) => {
+    emblaApi?.scrollTo(index);
+  };
 
   return (
     <div className="min-h-screen max-w-md mx-auto relative overflow-hidden">
@@ -58,29 +72,39 @@ const Onboarding: React.FC = () => {
           Skip
         </button>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8">
-            <Icon className="w-12 h-12 text-primary" />
+        {/* Swipeable slides */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div ref={emblaRef} className="overflow-hidden w-full">
+            <div className="flex">
+              {slides.map((slide, index) => {
+                const Icon = slide.icon;
+                return (
+                  <div key={index} className="min-w-0 shrink-0 grow-0 basis-full">
+                    <div className="flex flex-col items-center justify-center text-center px-2">
+                      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8">
+                        <Icon className="w-12 h-12 text-primary" />
+                      </div>
+                      <h1 className="text-3xl font-bold text-foreground mb-4">
+                        {slide.title}
+                      </h1>
+                      <p className="text-lg text-muted-foreground max-w-xs leading-relaxed">
+                        {slide.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          
-          <h1 className="text-3xl font-bold text-foreground mb-4">
-            {slide.title}
-          </h1>
-          
-          <p className="text-lg text-muted-foreground max-w-xs leading-relaxed">
-            {slide.description}
-          </p>
         </div>
 
         {/* Dots and button */}
         <div className="space-y-8">
-          {/* Dots */}
           <div className="flex justify-center gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentSlide(index)}
+                onClick={() => goToSlide(index)}
                 className={cn(
                   'w-2 h-2 rounded-full transition-all duration-300',
                   index === currentSlide
@@ -91,7 +115,6 @@ const Onboarding: React.FC = () => {
             ))}
           </div>
 
-          {/* Button */}
           <IOSButton
             onClick={handleNext}
             variant="primary"

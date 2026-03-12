@@ -139,7 +139,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
       const recorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 2500000,
+        videoBitsPerSecond: 8000000,
       });
 
       const chunks: Blob[] = [];
@@ -193,9 +193,19 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
         const dayNumber = clips[i].dayNumber;
 
         await new Promise<void>((resolve) => {
+          let resolved = false;
+          const done = () => {
+            if (resolved) return;
+            resolved = true;
+            resolve();
+          };
+
           const drawFrame = () => {
-            if (video.paused || video.ended) {
-              resolve();
+            if (resolved) return;
+            if (video.ended || video.paused) {
+              // Draw one last frame to avoid black gaps
+              ctx.drawImage(video, 0, 0, width, height);
+              done();
               return;
             }
             ctx.drawImage(video, 0, 0, width, height);
@@ -213,11 +223,9 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               const padY = fontSize * 0.35;
               const badgeW = metrics.width + padX * 2;
               const badgeH = fontSize + padY * 2;
-              // Center horizontally, 25% above the bottom
               const badgeX = (width - badgeW) / 2;
               const badgeY = height * 0.75 - badgeH / 2;
               const radius = badgeH * 0.3;
-              // Semi-transparent primary background
               ctx.fillStyle = 'hsla(37, 92%, 50%, 0.85)';
               ctx.beginPath();
               ctx.moveTo(badgeX + radius, badgeY);
@@ -231,7 +239,6 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
               ctx.quadraticCurveTo(badgeX, badgeY, badgeX + radius, badgeY);
               ctx.closePath();
               ctx.fill();
-              // White text — centered in badge
               ctx.fillStyle = '#FFFFFF';
               ctx.fillText(text, width / 2, height * 0.75);
               ctx.restore();
@@ -240,11 +247,23 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             requestAnimationFrame(drawFrame);
           };
 
-          video.onended = () => resolve();
+          // Safety timeout: if video stalls, move on after expected duration + buffer
+          const safetyTimeout = setTimeout(() => {
+            console.warn(`Clip ${i + 1} timed out, moving to next`);
+            video.pause();
+            done();
+          }, (video.duration || 10) * 1000 + 3000);
+
+          video.onended = () => {
+            clearTimeout(safetyTimeout);
+            done();
+          };
+
           video.play().then(() => {
             drawFrame();
           }).catch(() => {
-            resolve();
+            clearTimeout(safetyTimeout);
+            done();
           });
         });
       }

@@ -247,7 +247,6 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             requestAnimationFrame(drawFrame);
           };
 
-          video.onended = () => done();
           // Safety timeout: if video stalls, move on after expected duration + buffer
           const safetyTimeout = setTimeout(() => {
             console.warn(`Clip ${i + 1} timed out, moving to next`);
@@ -255,20 +254,17 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             done();
           }, (video.duration || 10) * 1000 + 3000);
 
+          video.onended = () => {
+            clearTimeout(safetyTimeout);
+            done();
+          };
+
           video.play().then(() => {
             drawFrame();
           }).catch(() => {
             clearTimeout(safetyTimeout);
             done();
           });
-
-          // Clear timeout when done normally
-          const origDone = done;
-          const wrappedResolve = resolve;
-          video.onended = () => {
-            clearTimeout(safetyTimeout);
-            origDone();
-          };
         });
       }
 

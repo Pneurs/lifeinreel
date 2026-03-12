@@ -1,48 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Journey, VideoClip, JourneyType } from '@/types/journey';
 
+const mapJourney = (j: any): Journey => ({
+  id: j.id,
+  name: j.name,
+  type: j.type as JourneyType,
+  description: j.description || undefined,
+  photo: j.photo || undefined,
+  dateOfBirth: j.date_of_birth || undefined,
+  createdAt: j.created_at,
+  lastCaptureDate: j.last_capture_date || undefined,
+  clipCount: j.clip_count,
+});
+
+const fetchJourneysFromDb = async () => {
+  const { data, error } = await supabase
+    .from('journeys')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapJourney);
+};
+
 export const useJourneys = () => {
-  const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchJourneys = async () => {
-    if (!user) {
-      setJourneys([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('journeys')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching journeys:', error);
-    } else {
-      const mappedJourneys: Journey[] = (data || []).map((j) => ({
-        id: j.id,
-        name: j.name,
-        type: j.type as JourneyType,
-        description: j.description || undefined,
-        photo: j.photo || undefined,
-        dateOfBirth: j.date_of_birth || undefined,
-        createdAt: j.created_at,
-        lastCaptureDate: j.last_capture_date || undefined,
-        clipCount: j.clip_count,
-      }));
-      setJourneys(mappedJourneys);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchJourneys();
-  }, [user]);
+  const { data: journeys = [], isLoading: loading } = useQuery({
+    queryKey: ['journeys', user?.id],
+    queryFn: fetchJourneysFromDb,
+    enabled: !!user,
+    staleTime: 30_000, // 30s before refetch
+  });
 
   const addJourney = async (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount'>) => {
     if (!user) return null;
@@ -64,21 +57,14 @@ export const useJourneys = () => {
       return null;
     }
 
-    const newJourney: Journey = {
-      id: data.id,
-      name: data.name,
-      type: data.type as JourneyType,
-      description: data.description || undefined,
-      dateOfBirth: data.date_of_birth || undefined,
-      createdAt: data.created_at,
-      clipCount: data.clip_count,
-    };
-
-    setJourneys((prev) => [newJourney, ...prev]);
+    const newJourney = mapJourney(data);
+    queryClient.setQueryData(['journeys', user.id], (old: Journey[] = []) => [newJourney, ...old]);
     return newJourney;
   };
 
-  return { journeys, loading, addJourney, refetch: fetchJourneys };
+  const refetch = () => queryClient.invalidateQueries({ queryKey: ['journeys', user?.id] });
+
+  return { journeys, loading, addJourney, refetch };
 };
 
 export const useJourneyClips = (journeyId: string) => {
@@ -131,7 +117,6 @@ export const useJourneyClips = (journeyId: string) => {
 
     const newValue = !clip.isHighlight;
     
-    // Optimistic update
     setClips((prev) =>
       prev.map((c) =>
         c.id === clipId ? { ...c, isHighlight: newValue } : c
@@ -145,7 +130,6 @@ export const useJourneyClips = (journeyId: string) => {
 
     if (error) {
       console.error('Error toggling highlight:', error);
-      // Revert on error
       setClips((prev) =>
         prev.map((c) =>
           c.id === clipId ? { ...c, isHighlight: !newValue } : c
@@ -183,7 +167,6 @@ export const useJourneyClips = (journeyId: string) => {
     const currentValue = clip[field.local as keyof VideoClip] as boolean;
     const newValue = !currentValue;
 
-    // Optimistic update
     setClips((prev) =>
       prev.map((c) =>
         c.id === clipId ? { ...c, [field.local]: newValue } : c
@@ -197,7 +180,6 @@ export const useJourneyClips = (journeyId: string) => {
 
     if (error) {
       console.error(`Error toggling ${type}:`, error);
-      // Revert on error
       setClips((prev) =>
         prev.map((c) =>
           c.id === clipId ? { ...c, [field.local]: currentValue } : c

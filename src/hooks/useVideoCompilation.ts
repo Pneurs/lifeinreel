@@ -46,7 +46,6 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
   }, [compiledUrl]);
 
   const fetchAsBlob = async (url: string): Promise<string> => {
-    // Fetch the video as a blob to avoid CORS issues with crossOrigin on <video>
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to download video (${response.status})`);
     const blob = await response.blob();
@@ -54,7 +53,6 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
   };
 
   const loadVideo = async (url: string): Promise<{ video: HTMLVideoElement; blobUrl: string }> => {
-    // Convert remote URL to a local blob URL to bypass crossOrigin taint
     const blobUrl = await fetchAsBlob(url);
 
     return new Promise((resolve, reject) => {
@@ -71,6 +69,16 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
       video.src = blobUrl;
       video.load();
+    });
+  };
+
+  const waitForSeek = (video: HTMLVideoElement): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!video.seeking) {
+        resolve();
+        return;
+      }
+      video.onseeked = () => resolve();
     });
   };
 
@@ -91,7 +99,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
     const blobUrls: string[] = [];
     try {
-      // Load all videos first (fetch as blobs to avoid CORS)
+      // Load all videos first
       const videos: HTMLVideoElement[] = [];
       for (let i = 0; i < videoUrls.length; i++) {
         if (abortRef.current) return null;
@@ -109,40 +117,45 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
       if (abortRef.current) return null;
 
-      // Determine canvas dimensions from first video
+      // Use the native resolution from the first video
       const firstVideo = videos[0];
       const width = firstVideo.videoWidth || 720;
       const height = firstVideo.videoHeight || 1280;
 
-      // Create canvas
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d', { alpha: false })!;
+      // Better image rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
-      // Setup MediaRecorder
+      // Use 30fps capture
       const stream = canvas.captureStream(30);
 
-      // Add audio tracks from videos if available
-      // Note: Audio mixing in browser is limited, we'll capture what we can
+      // Audio setup
       const audioCtx = new AudioContext();
       const destination = audioCtx.createMediaStreamDestination();
       destination.stream.getAudioTracks().forEach(track => {
         stream.addTrack(track);
       });
 
-      const mimeType = MediaRecorder.isTypeSupported('video/mp4')
-        ? 'video/mp4'
-        : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-          ? 'video/webm;codecs=vp9'
-          : 'video/webm';
+      // Prefer highest quality codec
+      const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
+        ? 'video/mp4;codecs=avc1'
+        : MediaRecorder.isTypeSupported('video/mp4')
+          ? 'video/mp4'
+          : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+            ? 'video/webm;codecs=vp9'
+            : 'video/webm';
 
       const recorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 8000000,
+        videoBitsPerSecond: 12_000_000, // 12 Mbps for high quality
       });
 
       const chunks: Blob[] = [];
+      // Collect data frequently for smoother output
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
@@ -154,7 +167,8 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
         };
       });
 
-      recorder.start();
+      // Request data every 100ms for smoother chunks
+      recorder.start(100);
 
       // Play each video onto the canvas sequentially
       for (let i = 0; i < videos.length; i++) {
@@ -165,10 +179,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
         const video = videos[i];
         video.currentTime = 0;
-        // Do NOT set video.muted = true here — muting prevents
-        // createMediaElementSource from capturing audio data.
-        // The createMediaElementSource call below already disconnects
-        // the element from speakers, so no audio will play out loud.
+        await waitForSeek(video);
 
         setProgress({
           stage: 'processing',
@@ -178,15 +189,12 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
           message: `Processing clip ${i + 1} of ${totalClips}...`,
         });
 
-        // Connect audio to the recording stream only (NOT to speakers)
+        // Connect audio
         try {
           const source = audioCtx.createMediaElementSource(video);
           source.connect(destination);
-          // Unmute so audio data flows through MediaElementSource
-          // (createMediaElementSource disconnects from speakers, so no sound leaks)
           video.muted = false;
         } catch {
-          // Audio source may already be connected or unavailable
           video.muted = false;
         }
 
@@ -200,17 +208,35 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             resolve();
           };
 
+          let lastTime = -1;
+          let stallCount = 0;
+
           const drawFrame = () => {
             if (resolved) return;
+
             if (video.ended || video.paused) {
-              // Draw one last frame to avoid black gaps
               ctx.drawImage(video, 0, 0, width, height);
               done();
               return;
             }
+
+            // Detect stalls: if currentTime hasn't changed for many frames
+            if (video.currentTime === lastTime) {
+              stallCount++;
+              if (stallCount > 90) { // ~3 seconds at 30fps
+                console.warn(`Clip ${i + 1} stalled at ${video.currentTime}s, skipping`);
+                video.pause();
+                done();
+                return;
+              }
+            } else {
+              stallCount = 0;
+              lastTime = video.currentTime;
+            }
+
             ctx.drawImage(video, 0, 0, width, height);
 
-            // Draw "Day X" badge overlay — lower center, 25% above bottom
+            // Draw "Day X" badge overlay
             if (dayNumber != null) {
               const fontSize = Math.round(width * 0.07);
               ctx.save();
@@ -247,15 +273,17 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
             requestAnimationFrame(drawFrame);
           };
 
-          // Safety timeout: if video stalls, move on after expected duration + buffer
+          // Safety timeout
           const safetyTimeout = setTimeout(() => {
             console.warn(`Clip ${i + 1} timed out, moving to next`);
             video.pause();
             done();
-          }, (video.duration || 10) * 1000 + 3000);
+          }, (video.duration || 10) * 1000 + 5000);
 
           video.onended = () => {
             clearTimeout(safetyTimeout);
+            // Draw final frame to avoid black flash
+            ctx.drawImage(video, 0, 0, width, height);
             done();
           };
 
@@ -280,7 +308,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
       const blob = await recordingDone;
       audioCtx.close();
 
-      // Cleanup video elements and blob URLs
+      // Cleanup
       videos.forEach(v => {
         v.pause();
         v.src = '';
@@ -302,6 +330,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
       return blob;
     } catch (error) {
       console.error('Compilation error:', error);
+      blobUrls.forEach(u => URL.revokeObjectURL(u));
       setProgress({
         stage: 'error',
         currentClip: 0,

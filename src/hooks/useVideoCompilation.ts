@@ -139,7 +139,7 @@ export const useVideoCompilation = (): UseVideoCompilationReturn => {
 
       const recorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 2500000,
+        videoBitsPerSecond: 8000000,
       });
 
       const chunks: Blob[] = [];

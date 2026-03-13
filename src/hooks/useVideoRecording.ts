@@ -557,7 +557,6 @@ export const useVideoRecording = ({
             .from('videos')
             .upload(thumbnailFileName, thumbBlob, {
               contentType: 'image/jpeg',
-              upsert: true,
             });
           if (thumbError) return null;
           const { data: thumbUrlData } = supabase.storage

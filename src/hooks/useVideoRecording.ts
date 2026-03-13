@@ -268,7 +268,7 @@ export const useVideoRecording = ({
 
       const recorder = new MediaRecorder(canvasStream, {
         mimeType: outputMime,
-        videoBitsPerSecond: 8_000_000,
+        videoBitsPerSecond: 4_000_000,
       });
 
       const outputChunks: Blob[] = [];

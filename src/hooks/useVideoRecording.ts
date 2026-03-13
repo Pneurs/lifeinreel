@@ -24,7 +24,7 @@ const isIOS = (): boolean => {
 
 export const useVideoRecording = ({ 
   journeyId, 
-  maxDuration = 5, 
+  maxDuration = 4, 
   minDuration = 2 
 }: UseVideoRecordingProps) => {
   const { user } = useAuth();

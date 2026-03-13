@@ -497,7 +497,7 @@ export const useVideoRecording = ({
     const isMP4 = effectiveMime.includes('mp4');
     const extension = isMP4 ? 'mp4' : 'webm';
     const contentType = isMP4 ? 'video/mp4' : 'video/webm';
-    const fileTimestamp = Date.now();
+    const fileTimestamp = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const fileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}.${extension}`;
     const thumbnailFileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}_thumb.jpg`;
 

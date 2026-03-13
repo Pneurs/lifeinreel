@@ -524,7 +524,7 @@ export const useVideoRecording = ({
         });
 
         const canvas = document.createElement('canvas');
-        canvas.width = Math.min(video.videoWidth, 480);
+        canvas.width = Math.min(video.videoWidth, 320);
         canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);

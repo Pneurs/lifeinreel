@@ -532,7 +532,7 @@ export const useVideoRecording = ({
         URL.revokeObjectURL(video.src);
 
         return await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.8);
+          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.6);
         });
       } catch (err) {
         console.warn('[generateThumbnail] Failed:', err);

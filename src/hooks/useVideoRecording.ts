@@ -549,7 +549,6 @@ export const useVideoRecording = ({
           .from('videos')
           .upload(fileName, blobToSave, {
             contentType,
-            upsert: true,
           });
 
         const thumbnailPromise = generateThumbnail(blobToSave).then(async (thumbBlob) => {

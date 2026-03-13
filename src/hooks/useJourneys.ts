@@ -34,7 +34,9 @@ export const useJourneys = () => {
     queryKey: ['journeys', user?.id],
     queryFn: fetchJourneysFromDb,
     enabled: !!user,
-    staleTime: 30_000, // 30s before refetch
+    staleTime: 60_000, // 60s before refetch
+    gcTime: 10 * 60 * 1000, // keep in cache 10 min
+    placeholderData: (prev) => prev, // show stale data instantly while refetching
   });
 
   const addJourney = async (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount'>) => {

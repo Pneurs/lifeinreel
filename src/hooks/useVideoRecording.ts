@@ -544,43 +544,38 @@ export const useVideoRecording = ({
       console.log(`[saveRecording] Attempt ${attempt} starting...`);
 
       try {
-        // Upload video to storage
-        const { error: uploadError } = await supabase.storage
+        // Upload video AND generate thumbnail in PARALLEL for speed
+        const uploadPromise = supabase.storage
           .from('videos')
           .upload(fileName, blobToSave, {
             contentType,
             upsert: true,
           });
 
-        if (uploadError) {
-          console.error(`[saveRecording] Attempt ${attempt} upload error:`, uploadError);
-          return { success: false, error: `Upload failed: ${uploadError.message}` };
+        const thumbnailPromise = generateThumbnail(blobToSave).then(async (thumbBlob) => {
+          if (!thumbBlob) return null;
+          const { error: thumbError } = await supabase.storage
+            .from('videos')
+            .upload(thumbnailFileName, thumbBlob, {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+          if (thumbError) return null;
+          const { data: thumbUrlData } = supabase.storage
+            .from('videos')
+            .getPublicUrl(thumbnailFileName);
+          return thumbUrlData.publicUrl;
+        }).catch(() => null);
+
+        const [uploadResult, thumbnailUrl] = await Promise.all([uploadPromise, thumbnailPromise]);
+
+        if (uploadResult.error) {
+          console.error(`[saveRecording] Attempt ${attempt} upload error:`, uploadResult.error);
+          return { success: false, error: `Upload failed: ${uploadResult.error.message}` };
         }
 
         console.log(`[saveRecording] Attempt ${attempt} upload successful`);
-
-        // Generate and upload thumbnail (non-blocking — don't fail save if this fails)
-        let thumbnailUrl: string | null = null;
-        try {
-          const thumbBlob = await generateThumbnail(blobToSave);
-          if (thumbBlob) {
-            const { error: thumbError } = await supabase.storage
-              .from('videos')
-              .upload(thumbnailFileName, thumbBlob, {
-                contentType: 'image/jpeg',
-                upsert: true,
-              });
-            if (!thumbError) {
-              const { data: thumbUrlData } = supabase.storage
-                .from('videos')
-                .getPublicUrl(thumbnailFileName);
-              thumbnailUrl = thumbUrlData.publicUrl;
-              console.log('[saveRecording] Thumbnail uploaded:', thumbnailUrl);
-            }
-          }
-        } catch (thumbErr) {
-          console.warn('[saveRecording] Thumbnail generation failed, continuing without:', thumbErr);
-        }
+        if (thumbnailUrl) console.log('[saveRecording] Thumbnail uploaded:', thumbnailUrl);
 
         // Get public URL
         const { data: urlData } = supabase.storage

@@ -240,7 +240,7 @@ export const useVideoRecording = ({
   const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {
     setIsProcessing(true);
     try {
-      const speedFactor = 2.5;
+      const speedFactor = 2.0;
       const video = document.createElement('video');
       video.muted = true;
       video.playsInline = true;

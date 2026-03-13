@@ -24,7 +24,7 @@ const isIOS = (): boolean => {
 
 export const useVideoRecording = ({ 
   journeyId, 
-  maxDuration = 5, 
+  maxDuration = 4, 
   minDuration = 2 
 }: UseVideoRecordingProps) => {
   const { user } = useAuth();
@@ -200,7 +200,7 @@ export const useVideoRecording = ({
       
       const mediaRecorder = new MediaRecorder(stream, { 
         mimeType,
-        videoBitsPerSecond: 8_000_000, // 8 Mbps for high quality
+        videoBitsPerSecond: 4_000_000, // 4 Mbps — good quality, smaller file = faster upload
       });
       
       mediaRecorder.ondataavailable = (event) => {
@@ -240,7 +240,7 @@ export const useVideoRecording = ({
   const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {
     setIsProcessing(true);
     try {
-      const speedFactor = 2.5;
+      const speedFactor = 2.0;
       const video = document.createElement('video');
       video.muted = true;
       video.playsInline = true;
@@ -268,7 +268,7 @@ export const useVideoRecording = ({
 
       const recorder = new MediaRecorder(canvasStream, {
         mimeType: outputMime,
-        videoBitsPerSecond: 8_000_000,
+        videoBitsPerSecond: 4_000_000,
       });
 
       const outputChunks: Blob[] = [];
@@ -524,7 +524,7 @@ export const useVideoRecording = ({
         });
 
         const canvas = document.createElement('canvas');
-        canvas.width = Math.min(video.videoWidth, 480);
+        canvas.width = Math.min(video.videoWidth, 320);
         canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -532,7 +532,7 @@ export const useVideoRecording = ({
         URL.revokeObjectURL(video.src);
 
         return await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.8);
+          canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.6);
         });
       } catch (err) {
         console.warn('[generateThumbnail] Failed:', err);
@@ -590,7 +590,7 @@ export const useVideoRecording = ({
             user_id: effectiveUser.id,
             video_url: urlData.publicUrl,
             thumbnail_url: thumbnailUrl,
-            duration: Math.min(recordingTime, maxDuration) / 2.5,
+            duration: Math.min(recordingTime, maxDuration) / 2.0,
             week_number: getWeekNumber(),
           });
 

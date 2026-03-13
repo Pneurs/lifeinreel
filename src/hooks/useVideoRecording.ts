@@ -200,7 +200,7 @@ export const useVideoRecording = ({
       
       const mediaRecorder = new MediaRecorder(stream, { 
         mimeType,
-        videoBitsPerSecond: 8_000_000, // 8 Mbps for high quality
+        videoBitsPerSecond: 4_000_000, // 4 Mbps — good quality, smaller file = faster upload
       });
       
       mediaRecorder.ondataavailable = (event) => {

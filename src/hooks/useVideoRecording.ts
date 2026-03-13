@@ -500,6 +500,8 @@ export const useVideoRecording = ({
     const fileTimestamp = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const fileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}.${extension}`;
     const thumbnailFileName = `${effectiveUser.id}/${targetJourneyId}/${fileTimestamp}_thumb.jpg`;
+    let uploadedVideoUrl: string | null = null;
+    let uploadedThumbnailUrl: string | null = null;
 
     // Generate thumbnail from video blob
     const generateThumbnail = async (blob: Blob): Promise<Blob | null> => {
@@ -544,41 +546,55 @@ export const useVideoRecording = ({
       console.log(`[saveRecording] Attempt ${attempt} starting...`);
 
       try {
-        // Upload video AND generate thumbnail in PARALLEL for speed
-        const uploadPromise = supabase.storage
-          .from('videos')
-          .upload(fileName, blobToSave, {
-            contentType,
-          });
-
-        const thumbnailPromise = generateThumbnail(blobToSave).then(async (thumbBlob) => {
-          if (!thumbBlob) return null;
-          const { error: thumbError } = await supabase.storage
+        // Upload only once. Retries should only retry DB insert/auth, not storage upload.
+        if (!uploadedVideoUrl) {
+          const uploadPromise = supabase.storage
             .from('videos')
-            .upload(thumbnailFileName, thumbBlob, {
-              contentType: 'image/jpeg',
+            .upload(fileName, blobToSave, {
+              contentType,
             });
-          if (thumbError) return null;
-          const { data: thumbUrlData } = supabase.storage
+
+          const thumbnailPromise = generateThumbnail(blobToSave).then(async (thumbBlob) => {
+            if (!thumbBlob) return null;
+            const { error: thumbError } = await supabase.storage
+              .from('videos')
+              .upload(thumbnailFileName, thumbBlob, {
+                contentType: 'image/jpeg',
+              });
+            if (thumbError && !/already exists/i.test(thumbError.message)) return null;
+            const { data: thumbUrlData } = supabase.storage
+              .from('videos')
+              .getPublicUrl(thumbnailFileName);
+            return thumbUrlData.publicUrl;
+          }).catch(() => null);
+
+          const [uploadResult, thumbnailUrl] = await Promise.all([uploadPromise, thumbnailPromise]);
+
+          if (uploadResult.error && !/already exists/i.test(uploadResult.error.message)) {
+            console.error(`[saveRecording] Attempt ${attempt} upload error:`, uploadResult.error);
+            return { success: false, error: `Upload failed: ${uploadResult.error.message}` };
+          }
+
+          const { data: urlData } = supabase.storage
             .from('videos')
-            .getPublicUrl(thumbnailFileName);
-          return thumbUrlData.publicUrl;
-        }).catch(() => null);
+            .getPublicUrl(fileName);
 
-        const [uploadResult, thumbnailUrl] = await Promise.all([uploadPromise, thumbnailPromise]);
+          uploadedVideoUrl = urlData.publicUrl;
+          uploadedThumbnailUrl = thumbnailUrl;
 
-        if (uploadResult.error) {
-          console.error(`[saveRecording] Attempt ${attempt} upload error:`, uploadResult.error);
-          return { success: false, error: `Upload failed: ${uploadResult.error.message}` };
+          if (uploadResult.error) {
+            console.warn('[saveRecording] Video already existed, reusing uploaded file');
+          } else {
+            console.log(`[saveRecording] Attempt ${attempt} upload successful`);
+          }
+          if (uploadedThumbnailUrl) console.log('[saveRecording] Thumbnail uploaded:', uploadedThumbnailUrl);
+        } else {
+          console.log('[saveRecording] Reusing already uploaded file for retry');
         }
 
-        console.log(`[saveRecording] Attempt ${attempt} upload successful`);
-        if (thumbnailUrl) console.log('[saveRecording] Thumbnail uploaded:', thumbnailUrl);
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('videos')
-          .getPublicUrl(fileName);
+        if (!uploadedVideoUrl) {
+          return { success: false, error: 'Upload failed: could not resolve video URL' };
+        }
 
         // Save clip metadata
         const { error: dbError } = await supabase
@@ -586,8 +602,8 @@ export const useVideoRecording = ({
           .insert({
             journey_id: targetJourneyId,
             user_id: effectiveUser.id,
-            video_url: urlData.publicUrl,
-            thumbnail_url: thumbnailUrl,
+            video_url: uploadedVideoUrl,
+            thumbnail_url: uploadedThumbnailUrl,
             duration: Math.min(recordingTime, maxDuration) / 2.0,
             week_number: getWeekNumber(),
           });

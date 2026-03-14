@@ -604,7 +604,7 @@ export const useVideoRecording = ({
             user_id: effectiveUser.id,
             video_url: uploadedVideoUrl,
             thumbnail_url: uploadedThumbnailUrl,
-            duration: Math.min(recordingTime, maxDuration) / 2.0,
+            duration: Math.max(1, Math.min(Math.min(recordingTime, maxDuration) / 2.0, 2)), // DB check constraint requires 1..2
             week_number: getWeekNumber(),
           });
 

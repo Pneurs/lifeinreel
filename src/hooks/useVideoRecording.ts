@@ -107,26 +107,36 @@ export const useVideoRecording = ({
         }
       }
       
-      // Use { exact } when flipping to force the specific camera.
-      // On initial open, use non-exact so the browser can fall back.
-      const facingConstraint = facingMode
-        ? { exact: facingModeRef.current }
-        : facingModeRef.current;
-
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: facingConstraint,
-          width: { ideal: 1920, max: 3840 },
-          height: { ideal: 1080, max: 2160 },
-          frameRate: { ideal: 30 },
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
+      // Always try { exact } first to force the requested camera.
+      // If that fails (e.g. device doesn't support exact constraint), fall back to ideal.
+      const baseVideoConstraints = {
+        width: { ideal: 1920, max: 3840 },
+        height: { ideal: 1080, max: 2160 },
+        frameRate: { ideal: 30 },
       };
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const audioConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+
+      let mediaStream: MediaStream | null = null;
+
+      // Try exact first
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { ...baseVideoConstraints, facingMode: { exact: facingModeRef.current } },
+          audio: audioConstraints,
+        });
+      } catch (exactErr) {
+        console.warn('[initCamera] Exact facingMode failed, trying ideal fallback:', exactErr);
+        // Fallback: use ideal (strong hint) instead of bare string
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { ...baseVideoConstraints, facingMode: { ideal: facingModeRef.current } },
+          audio: audioConstraints,
+        });
+      }
+
       streamRef.current = mediaStream;
       setStream(mediaStream);
       setCameraReady(true);

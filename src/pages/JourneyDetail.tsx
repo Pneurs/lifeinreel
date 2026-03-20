@@ -270,7 +270,7 @@ const JourneyDetail: React.FC = () => {
 
       {/* Play All Viewer */}
       <PlayAllViewer
-        clips={clips}
+        clips={[...clips].sort((a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime())}
         open={playAllOpen}
         onOpenChange={setPlayAllOpen}
         journeyName={journey.name}

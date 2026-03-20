@@ -29,12 +29,15 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const nextVideoRef = useRef<HTMLVideoElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [activeScrollIndex, setActiveScrollIndex] = useState(0);
 
   const currentClip = clips[currentIndex];
+  const nextClip = currentIndex < clips.length - 1 ? clips[currentIndex + 1] : null;
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -43,14 +46,30 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
       setIsPlaying(false);
       setIsMuted(false);
       setActiveScrollIndex(0);
+      setIsBuffering(false);
     }
   }, [open]);
 
-  // Auto-play current clip in sequential mode
+  // Auto-play current clip in sequential mode with buffering check
   useEffect(() => {
     if (!open || mode !== 'sequential' || !videoRef.current || !currentClip) return;
-    videoRef.current.currentTime = 0;
-    videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    const video = videoRef.current;
+    
+    const playWhenReady = () => {
+      setIsBuffering(false);
+      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    };
+
+    video.currentTime = 0;
+    
+    // If video has enough data, play immediately
+    if (video.readyState >= 3) {
+      playWhenReady();
+    } else {
+      setIsBuffering(true);
+      video.addEventListener('canplay', playWhenReady, { once: true });
+      return () => video.removeEventListener('canplay', playWhenReady);
+    }
   }, [open, mode, currentIndex, currentClip]);
 
   // Handle video ended - auto advance
@@ -226,11 +245,32 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
               <video
                 ref={videoRef}
                 src={currentClip.uri}
+                preload="auto"
                 playsInline
                 controls={false}
                 onEnded={handleEnded}
+                onWaiting={() => setIsBuffering(true)}
+                onPlaying={() => setIsBuffering(false)}
                 className="w-full h-full object-contain"
               />
+
+              {/* Preload next video */}
+              {nextClip && (
+                <video
+                  ref={nextVideoRef}
+                  src={nextClip.uri}
+                  preload="auto"
+                  className="hidden"
+                  muted
+                />
+              )}
+
+              {/* Buffering spinner */}
+              {isBuffering && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
 
               {/* Day number badge */}
               {getDayNumber && getDayNumber(currentClip.capturedAt) && (
@@ -242,7 +282,7 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
               )}
 
               {/* Play/Pause overlay */}
-              {!isPlaying && (
+              {!isPlaying && !isBuffering && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="w-16 h-16 rounded-full bg-primary/80 flex items-center justify-center">
                     <Play className="w-7 h-7 text-primary-foreground ml-1" />

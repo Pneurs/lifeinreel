@@ -276,6 +276,8 @@ const JourneyDetail: React.FC = () => {
         journeyName={journey.name}
         getDayNumber={getDayNumber}
       />
+    </>
+  );
 };
 
 export default JourneyDetail;

@@ -108,6 +108,15 @@ const JourneyDetail: React.FC = () => {
               <h1 className="text-xl font-bold text-foreground">{journey.name}</h1>
               <p className="text-sm text-muted-foreground">{journey.clipCount} clips captured</p>
             </div>
+            {clips.length > 0 && (
+              <IOSButton
+                variant="soft"
+                size="icon"
+                onClick={() => setPlayAllOpen(true)}
+              >
+                <PlayCircle className="w-5 h-5" />
+              </IOSButton>
+            )}
             <IOSButton
               variant="primary"
               size="icon"

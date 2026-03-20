@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Star, Play } from 'lucide-react';
+import { ArrowLeft, Camera, Star, Play, PlayCircle } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';

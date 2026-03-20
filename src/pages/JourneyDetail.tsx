@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';
 import { ClipActions } from '@/components/journey/ClipActions';
 import { ClipPreviewDialog } from '@/components/journey/ClipPreviewDialog';
+import { PlayAllViewer } from '@/components/journey/PlayAllViewer';
 import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys, useJourneyClips } from '@/hooks/useJourneys';
 import { cn, calculateDayNumber } from '@/lib/utils';

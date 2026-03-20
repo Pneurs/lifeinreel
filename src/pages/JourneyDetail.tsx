@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Star, Play } from 'lucide-react';
+import { ArrowLeft, Camera, Star, Play, PlayCircle } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';
 import { ClipActions } from '@/components/journey/ClipActions';
 import { ClipPreviewDialog } from '@/components/journey/ClipPreviewDialog';
+import { PlayAllViewer } from '@/components/journey/PlayAllViewer';
 import { IOSButton } from '@/components/ui/ios-button';
 import { useJourneys, useJourneyClips } from '@/hooks/useJourneys';
 import { cn, calculateDayNumber } from '@/lib/utils';
@@ -23,6 +24,7 @@ const JourneyDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [playAllOpen, setPlayAllOpen] = useState(false);
 
   const handleDeleteClip = async (clipId: string) => {
     const success = await deleteClip(clipId);
@@ -106,6 +108,15 @@ const JourneyDetail: React.FC = () => {
               <h1 className="text-xl font-bold text-foreground">{journey.name}</h1>
               <p className="text-sm text-muted-foreground">{journey.clipCount} clips captured</p>
             </div>
+            {clips.length > 0 && (
+              <IOSButton
+                variant="soft"
+                size="icon"
+                onClick={() => setPlayAllOpen(true)}
+              >
+                <PlayCircle className="w-5 h-5" />
+              </IOSButton>
+            )}
             <IOSButton
               variant="primary"
               size="icon"
@@ -255,6 +266,15 @@ const JourneyDetail: React.FC = () => {
         onToggleBestOf={handleToggleBestOf}
         onDelete={handleDeleteClip}
         dayNumber={previewClip ? getDayNumber(previewClip.capturedAt) : undefined}
+      />
+
+      {/* Play All Viewer */}
+      <PlayAllViewer
+        clips={clips}
+        open={playAllOpen}
+        onOpenChange={setPlayAllOpen}
+        journeyName={journey.name}
+        getDayNumber={getDayNumber}
       />
     </>
   );

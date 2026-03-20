@@ -24,6 +24,7 @@ const JourneyDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [playAllOpen, setPlayAllOpen] = useState(false);
 
   const handleDeleteClip = async (clipId: string) => {
     const success = await deleteClip(clipId);

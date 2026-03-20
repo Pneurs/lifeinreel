@@ -29,12 +29,15 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const nextVideoRef = useRef<HTMLVideoElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [activeScrollIndex, setActiveScrollIndex] = useState(0);
 
   const currentClip = clips[currentIndex];
+  const nextClip = currentIndex < clips.length - 1 ? clips[currentIndex + 1] : null;
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -43,14 +46,30 @@ export const PlayAllViewer: React.FC<PlayAllViewerProps> = ({
       setIsPlaying(false);
       setIsMuted(false);
       setActiveScrollIndex(0);
+      setIsBuffering(false);
     }
   }, [open]);
 
-  // Auto-play current clip in sequential mode
+  // Auto-play current clip in sequential mode with buffering check
   useEffect(() => {
     if (!open || mode !== 'sequential' || !videoRef.current || !currentClip) return;
-    videoRef.current.currentTime = 0;
-    videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    const video = videoRef.current;
+    
+    const playWhenReady = () => {
+      setIsBuffering(false);
+      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    };
+
+    video.currentTime = 0;
+    
+    // If video has enough data, play immediately
+    if (video.readyState >= 3) {
+      playWhenReady();
+    } else {
+      setIsBuffering(true);
+      video.addEventListener('canplay', playWhenReady, { once: true });
+      return () => video.removeEventListener('canplay', playWhenReady);
+    }
   }, [open, mode, currentIndex, currentClip]);
 
   // Handle video ended - auto advance

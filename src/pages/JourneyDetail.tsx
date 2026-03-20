@@ -267,8 +267,15 @@ const JourneyDetail: React.FC = () => {
         onDelete={handleDeleteClip}
         dayNumber={previewClip ? getDayNumber(previewClip.capturedAt) : undefined}
       />
-    </>
-  );
+
+      {/* Play All Viewer */}
+      <PlayAllViewer
+        clips={clips}
+        open={playAllOpen}
+        onOpenChange={setPlayAllOpen}
+        journeyName={journey.name}
+        getDayNumber={getDayNumber}
+      />
 };
 
 export default JourneyDetail;

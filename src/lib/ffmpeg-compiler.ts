@@ -180,28 +180,37 @@ async function processBatch(
       const overlayName = `${batchId}_overlay_${i}.png`;
       await ffmpeg.writeFile(overlayName, overlayPng);
 
-      // Re-encode with overlay
+      // Re-encode with overlay + normalize resolution/framerate
       await ffmpeg.exec([
         '-i', inputName,
         '-i', overlayName,
-        '-filter_complex', '[0:v][1:v]overlay=0:0:shortest=1[outv]',
+        '-filter_complex', '[0:v]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2[scaled];[scaled][1:v]overlay=0:0:shortest=1[outv]',
         '-map', '[outv]',
         '-map', '0:a?',
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
         '-crf', '23',
+        '-r', '30',
         '-c:a', 'aac',
         '-b:a', '128k',
+        '-ar', '44100',
         '-y', outputName,
       ]);
 
       // Clean up overlay
       await ffmpeg.deleteFile(overlayName);
     } else {
-      // Just copy (no overlay needed)
+      // Re-encode to normalize resolution/framerate
       await ffmpeg.exec([
         '-i', inputName,
-        '-c', 'copy',
+        '-vf', 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2',
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '23',
+        '-r', '30',
+        '-c:a', 'aac',
+        '-b:a', '128k',
+        '-ar', '44100',
         '-y', outputName,
       ]);
     }

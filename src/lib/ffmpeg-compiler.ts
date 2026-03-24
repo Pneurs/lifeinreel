@@ -1,5 +1,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL, fetchFile } from '@ffmpeg/util';
+import coreURL from '@ffmpeg/core?url';
+import wasmURL from '@ffmpeg/core/wasm?url';
 
 export interface ClipMeta {
   url: string;
@@ -22,6 +24,45 @@ let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoaded = false;
 
 const BATCH_SIZE = 30; // Process clips in batches to manage memory
+const CORE_VERSION = '0.12.9';
+const CORE_CDN_BASE_URLS = [
+  `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
+  `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/esm`,
+];
+
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error && err.message) return err.message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+};
+
+async function loadCore(ffmpeg: FFmpeg): Promise<void> {
+  const attempts: string[] = [];
+
+  try {
+    await ffmpeg.load({ coreURL, wasmURL });
+    return;
+  } catch (err) {
+    attempts.push(`local core: ${getErrorMessage(err)}`);
+  }
+
+  for (const baseURL of CORE_CDN_BASE_URLS) {
+    try {
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+      return;
+    } catch (err) {
+      attempts.push(`${baseURL}: ${getErrorMessage(err)}`);
+    }
+  }
+
+  throw new Error(`Video engine failed to load. ${attempts.join(' | ')}`);
+}
 
 async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpegInstance && ffmpegLoaded) return ffmpegInstance;
@@ -33,23 +74,11 @@ async function getFFmpeg(): Promise<FFmpeg> {
   });
 
   try {
-    // Try single-threaded mode (no SharedArrayBuffer needed)
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
-
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
+    // Prefer bundled core files, fallback to CDN mirrors.
+    await loadCore(ffmpeg);
   } catch (err) {
     console.error('FFmpeg load error details:', err);
-    
-    // Check if it's a SharedArrayBuffer issue
-    if (typeof SharedArrayBuffer === 'undefined') {
-      throw new Error(
-        'Video compilation requires secure context headers. Please try again or use a different browser.'
-      );
-    }
-    throw new Error('Video engine failed to load. Please try again.');
+    throw err instanceof Error ? err : new Error('Video engine failed to load. Please try again.');
   }
 
   ffmpegInstance = ffmpeg;
@@ -228,7 +257,7 @@ export async function compileWithFFmpeg(
     ffmpeg = await getFFmpeg();
   } catch (err) {
     console.error('FFmpeg load failed:', err);
-    throw new Error('Video engine failed to load. Please try again.');
+    throw err instanceof Error ? err : new Error('Video engine failed to load. Please try again.');
   }
 
   if (abortSignal?.aborted) return null;

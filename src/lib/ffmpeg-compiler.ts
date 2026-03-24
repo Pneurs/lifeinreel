@@ -27,12 +27,30 @@ async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpegInstance && ffmpegLoaded) return ffmpegInstance;
 
   const ffmpeg = new FFmpeg();
-  const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
-
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+  
+  ffmpeg.on('log', ({ message }) => {
+    console.log('[FFmpeg]', message);
   });
+
+  try {
+    // Try single-threaded mode (no SharedArrayBuffer needed)
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+  } catch (err) {
+    console.error('FFmpeg load error details:', err);
+    
+    // Check if it's a SharedArrayBuffer issue
+    if (typeof SharedArrayBuffer === 'undefined') {
+      throw new Error(
+        'Video compilation requires secure context headers. Please try again or use a different browser.'
+      );
+    }
+    throw new Error('Video engine failed to load. Please try again.');
+  }
 
   ffmpegInstance = ffmpeg;
   ffmpegLoaded = true;

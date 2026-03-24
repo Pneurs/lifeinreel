@@ -141,25 +141,6 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* Preferences */}
-          <div>
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Preferences
-            </h2>
-            <div className="bg-card rounded-2xl px-4">
-              <SettingItem
-                icon={Moon}
-                label="Dark mode"
-                trailing={
-                  <Switch 
-                    checked={darkMode} 
-                    onCheckedChange={setDarkMode}
-                  />
-                }
-              />
-            </div>
-          </div>
-
           {/* Support */}
           <div>
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">

@@ -55,10 +55,23 @@ const SettingItem: React.FC<SettingItemProps> = ({
 );
 
 const Profile: React.FC = () => {
-  const [dailyReminder, setDailyReminder] = React.useState(true);
-  const [weeklyReminder, setWeeklyReminder] = React.useState(true);
-  const [darkMode, setDarkMode] = React.useState(false);
+  const [dailyReminder, setDailyReminder] = React.useState(() => {
+    return localStorage.getItem('dailyReminder') !== 'false';
+  });
+  const [weeklyReminder, setWeeklyReminder] = React.useState(() => {
+    return localStorage.getItem('weeklyReminder') !== 'false';
+  });
   const { user, signOut } = useAuth();
+
+  const handleDailyToggle = (checked: boolean) => {
+    setDailyReminder(checked);
+    localStorage.setItem('dailyReminder', String(checked));
+  };
+
+  const handleWeeklyToggle = (checked: boolean) => {
+    setWeeklyReminder(checked);
+    localStorage.setItem('weeklyReminder', String(checked));
+  };
   const navigate = useNavigate();
 
   const handleSignOut = async () => {

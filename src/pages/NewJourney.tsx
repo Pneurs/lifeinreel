@@ -35,6 +35,14 @@ const journeyTypes = [
     activeColor: 'bg-destructive text-destructive-foreground border-destructive',
   },
   { 
+    type: 'travel' as JourneyType, 
+    icon: Plane, 
+    label: 'Travel', 
+    description: 'Document your adventures',
+    color: 'bg-chart-3/10 text-chart-3 border-chart-3/20',
+    activeColor: 'bg-chart-3 text-chart-3-foreground border-chart-3',
+  },
+  { 
     type: 'custom' as JourneyType, 
     icon: Target, 
     label: 'Custom Goal', 

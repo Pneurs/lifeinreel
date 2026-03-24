@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
-  Moon, 
   Shield, 
   HelpCircle, 
   LogOut,
@@ -56,10 +55,23 @@ const SettingItem: React.FC<SettingItemProps> = ({
 );
 
 const Profile: React.FC = () => {
-  const [dailyReminder, setDailyReminder] = React.useState(true);
-  const [weeklyReminder, setWeeklyReminder] = React.useState(true);
-  const [darkMode, setDarkMode] = React.useState(false);
+  const [dailyReminder, setDailyReminder] = React.useState(() => {
+    return localStorage.getItem('dailyReminder') !== 'false';
+  });
+  const [weeklyReminder, setWeeklyReminder] = React.useState(() => {
+    return localStorage.getItem('weeklyReminder') !== 'false';
+  });
   const { user, signOut } = useAuth();
+
+  const handleDailyToggle = (checked: boolean) => {
+    setDailyReminder(checked);
+    localStorage.setItem('dailyReminder', String(checked));
+  };
+
+  const handleWeeklyToggle = (checked: boolean) => {
+    setWeeklyReminder(checked);
+    localStorage.setItem('weeklyReminder', String(checked));
+  };
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -104,14 +116,14 @@ const Profile: React.FC = () => {
               Notifications
             </h2>
             <div className="bg-card rounded-2xl px-4">
-              <SettingItem
+               <SettingItem
                 icon={Bell}
                 label="Daily reminder"
                 description="Remind me to capture moments"
                 trailing={
                   <Switch 
                     checked={dailyReminder} 
-                    onCheckedChange={setDailyReminder}
+                    onCheckedChange={handleDailyToggle}
                   />
                 }
               />
@@ -122,26 +134,7 @@ const Profile: React.FC = () => {
                 trailing={
                   <Switch 
                     checked={weeklyReminder} 
-                    onCheckedChange={setWeeklyReminder}
-                  />
-                }
-              />
-            </div>
-          </div>
-
-          {/* Preferences */}
-          <div>
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Preferences
-            </h2>
-            <div className="bg-card rounded-2xl px-4">
-              <SettingItem
-                icon={Moon}
-                label="Dark mode"
-                trailing={
-                  <Switch 
-                    checked={darkMode} 
-                    onCheckedChange={setDarkMode}
+                    onCheckedChange={handleWeeklyToggle}
                   />
                 }
               />

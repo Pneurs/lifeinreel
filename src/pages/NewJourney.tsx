@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Baby, Dumbbell, Heart, Target } from 'lucide-react';
+import { ArrowLeft, Baby, Dumbbell, Heart, Plane, Target } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { IOSButton } from '@/components/ui/ios-button';
 import { Input } from '@/components/ui/input';

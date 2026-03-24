@@ -116,14 +116,14 @@ const Profile: React.FC = () => {
               Notifications
             </h2>
             <div className="bg-card rounded-2xl px-4">
-              <SettingItem
+               <SettingItem
                 icon={Bell}
                 label="Daily reminder"
                 description="Remind me to capture moments"
                 trailing={
                   <Switch 
                     checked={dailyReminder} 
-                    onCheckedChange={setDailyReminder}
+                    onCheckedChange={handleDailyToggle}
                   />
                 }
               />
@@ -134,7 +134,7 @@ const Profile: React.FC = () => {
                 trailing={
                   <Switch 
                     checked={weeklyReminder} 
-                    onCheckedChange={setWeeklyReminder}
+                    onCheckedChange={handleWeeklyToggle}
                   />
                 }
               />

@@ -286,7 +286,10 @@ export async function compileWithFFmpeg(
   const outputData = await ffmpeg.readFile(finalOutputName);
   await ffmpeg.deleteFile(finalOutputName);
 
-  const blob = new Blob([outputData], { type: 'video/mp4' });
+  const outputBytes = outputData instanceof Uint8Array
+    ? new Uint8Array(outputData.buffer.slice(outputData.byteOffset, outputData.byteOffset + outputData.byteLength))
+    : outputData;
+  const blob = new Blob([outputBytes], { type: 'video/mp4' });
 
   onProgress({
     stage: 'done',

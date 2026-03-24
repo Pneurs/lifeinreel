@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Baby, Dumbbell, Heart, Target, Camera, ChevronRight } from 'lucide-react';
+import { Baby, Dumbbell, Heart, Target, Plane, Camera, ChevronRight } from 'lucide-react';
 import { Journey, JourneyType } from '@/types/journey';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';

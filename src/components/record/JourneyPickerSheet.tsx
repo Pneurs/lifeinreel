@@ -69,6 +69,7 @@ export const JourneyPickerSheet: React.FC<JourneyPickerSheetProps> = ({
                   {journey.type === 'child' && '👶'}
                   {journey.type === 'weightloss' && '💪'}
                   {journey.type === 'pregnancy' && '🤰'}
+                  {journey.type === 'travel' && '✈️'}
                   {journey.type === 'custom' && '🎯'}
                 </div>
 

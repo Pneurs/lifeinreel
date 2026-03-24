@@ -157,7 +157,7 @@ const NewJourney: React.FC = () => {
             </div>
           )}
 
-          {(selectedType === 'custom' || selectedType === 'weightloss') && (
+          {(selectedType === 'custom' || selectedType === 'weightloss' || selectedType === 'travel') && (
             <div>
               <label className="text-sm font-semibold text-muted-foreground mb-2 block">
                 Description (optional)

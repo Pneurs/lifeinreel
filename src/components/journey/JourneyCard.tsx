@@ -9,6 +9,7 @@ const journeyIcons: Record<JourneyType, React.ElementType> = {
   child: Baby,
   weightloss: Dumbbell,
   pregnancy: Heart,
+  travel: Plane,
   custom: Target,
 };
 
@@ -16,6 +17,7 @@ const journeyColors: Record<JourneyType, string> = {
   child: 'bg-primary/10 text-primary',
   weightloss: 'bg-chart-5/10 text-chart-5',
   pregnancy: 'bg-destructive/10 text-destructive',
+  travel: 'bg-chart-3/10 text-chart-3',
   custom: 'bg-secondary/10 text-secondary',
 };
 

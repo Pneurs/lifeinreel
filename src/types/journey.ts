@@ -1,4 +1,4 @@
-export type JourneyType = 'child' | 'weightloss' | 'pregnancy' | 'custom';
+export type JourneyType = 'child' | 'weightloss' | 'pregnancy' | 'travel' | 'custom';
 
 export interface Journey {
   id: string;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Baby, Dumbbell, Heart, Target } from 'lucide-react';
+import { ArrowLeft, Baby, Dumbbell, Heart, Plane, Target } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { IOSButton } from '@/components/ui/ios-button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,14 @@ const journeyTypes = [
     description: 'Capture the miracle',
     color: 'bg-destructive/10 text-destructive border-destructive/20',
     activeColor: 'bg-destructive text-destructive-foreground border-destructive',
+  },
+  { 
+    type: 'travel' as JourneyType, 
+    icon: Plane, 
+    label: 'Travel', 
+    description: 'Document your adventures',
+    color: 'bg-chart-3/10 text-chart-3 border-chart-3/20',
+    activeColor: 'bg-chart-3 text-chart-3-foreground border-chart-3',
   },
   { 
     type: 'custom' as JourneyType, 
@@ -149,7 +157,7 @@ const NewJourney: React.FC = () => {
             </div>
           )}
 
-          {(selectedType === 'custom' || selectedType === 'weightloss') && (
+          {(selectedType === 'custom' || selectedType === 'weightloss' || selectedType === 'travel') && (
             <div>
               <label className="text-sm font-semibold text-muted-foreground mb-2 block">
                 Description (optional)

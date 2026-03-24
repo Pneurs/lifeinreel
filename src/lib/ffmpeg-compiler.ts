@@ -184,7 +184,7 @@ async function processBatch(
       await ffmpeg.exec([
         '-i', inputName,
         '-i', overlayName,
-        '-filter_complex', '[0:v]fps=30,scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2[scaled];[scaled][1:v]overlay=0:0:shortest=1[outv]',
+        '-filter_complex', '[0:v]fps=30,scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2[scaled];[scaled][1:v]overlay=0:0:eof_action=repeat:shortest=0[outv]',
         '-map', '[outv]',
         '-map', '0:a?',
         '-c:v', 'libx264',

@@ -54,6 +54,9 @@ export const CompilationProgress: React.FC<CompilationProgressProps> = ({
           <div className="space-y-2">
             <Progress value={percent} className="h-2" />
             <p className="text-xs text-muted-foreground">{percent}%</p>
+            <p className="text-xs text-amber-500 mt-3">
+              ⚠️ Please keep the app open. Switching apps may interrupt the compilation.
+            </p>
           </div>
         )}
       </div>

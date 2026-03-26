@@ -502,6 +502,16 @@ export const useVideoRecording = ({
     setIsSaving(true);
     setError(null);
 
+    // Standardize clip format for instant compilation (720p, H.264, baseline)
+    try {
+      const { standardizeClip } = await import('@/lib/ffmpeg-compiler');
+      const standardized = await standardizeClip(blobToSave);
+      blobToSave = standardized;
+      console.log('[saveRecording] Clip standardized for fast compilation');
+    } catch (err) {
+      console.warn('[saveRecording] Standardization skipped, using raw blob:', err);
+    }
+
     // Determine file extension based on blob type
     const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;
     const isMP4 = effectiveMime.includes('mp4');

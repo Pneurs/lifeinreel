@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      compilation_jobs: {
+        Row: {
+          clip_count: number
+          clip_day_numbers: number[] | null
+          clip_urls: string[]
+          created_at: string | null
+          duration: number
+          error_message: string | null
+          id: string
+          journey_id: string | null
+          render_id: string | null
+          result_url: string | null
+          status: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          clip_count?: number
+          clip_day_numbers?: number[] | null
+          clip_urls?: string[]
+          created_at?: string | null
+          duration?: number
+          error_message?: string | null
+          id?: string
+          journey_id?: string | null
+          render_id?: string | null
+          result_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          clip_count?: number
+          clip_day_numbers?: number[] | null
+          clip_urls?: string[]
+          created_at?: string | null
+          duration?: number
+          error_message?: string | null
+          id?: string
+          journey_id?: string | null
+          render_id?: string | null
+          result_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compilation_jobs_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compilations: {
         Row: {
           clip_count: number

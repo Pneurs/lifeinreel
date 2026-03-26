@@ -129,6 +129,54 @@ export const useCompilations = () => {
     }
   };
 
+  /** Save a compilation from a remote URL (no blob upload needed, e.g. from cloud compilation) */
+  const saveCompilationFromUrl = async (params: {
+    title: string;
+    description?: string;
+    videoUrl: string;
+    duration: number;
+    clipCount: number;
+    clipIds: string[];
+    journeyId?: string;
+    isDraft?: boolean;
+  }): Promise<Compilation | null> => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('compilations')
+        .insert({
+          user_id: user.id,
+          title: params.title,
+          description: params.description || null,
+          video_url: params.videoUrl,
+          duration: params.duration,
+          clip_count: params.clipCount,
+          clip_ids: params.clipIds,
+          journey_id: params.journeyId || null,
+          is_draft: params.isDraft ?? false,
+        } as any)
+        .select()
+        .single() as { data: any; error: any };
+
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+
+      const newCompilation = mapRow(data);
+      if (newCompilation.isDraft) {
+        setDrafts((prev) => [newCompilation, ...prev]);
+      } else {
+        setCompilations((prev) => [newCompilation, ...prev]);
+      }
+      return newCompilation;
+    } catch (error) {
+      console.error('Save compilation from URL error:', error);
+      return null;
+    }
+  };
+
   const promoteDraft = async (id: string): Promise<boolean> => {
     const { error } = await supabase
       .from('compilations')
@@ -172,6 +220,7 @@ export const useCompilations = () => {
     drafts,
     loading,
     saveCompilation,
+    saveCompilationFromUrl,
     promoteDraft,
     deleteCompilation,
     refetch: fetchCompilations,

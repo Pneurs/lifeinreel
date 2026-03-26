@@ -98,36 +98,11 @@ Deno.serve(async (req) => {
 
     console.log(`[compile-video] Submitting ${clipUrls.length} clips to Shotstack (${SHOTSTACK_ENV})`);
 
-    // Submit render to Shotstack
-    const renderRes = await fetch(`${SHOTSTACK_BASE}/render`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': SHOTSTACK_API_KEY,
-      },
-      body: JSON.stringify(renderBody),
-    });
-
-    const renderData = await renderRes.json();
-
-    if (!renderRes.ok) {
-      console.error('[compile-video] Shotstack error:', JSON.stringify(renderData));
-      throw new Error(`Shotstack API error: ${renderData?.response?.message || renderRes.statusText}`);
-    }
-
-    const renderId = renderData?.response?.id;
-    if (!renderId) {
-      throw new Error('No render ID returned from Shotstack');
-    }
-
-    console.log(`[compile-video] Render submitted: ${renderId}`);
-
-    // Save job to DB (using service role to bypass RLS)
+    // Create job record first so we can return immediately
     const { data: job, error: dbError } = await supabase
       .from('compilation_jobs')
       .insert({
         user_id: user.id,
-        render_id: renderId,
         status: 'processing',
         clip_urls: clipUrls,
         clip_day_numbers: clipDayNumbers || [],
@@ -144,9 +119,49 @@ Deno.serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
 
+    // Use EdgeRuntime.waitUntil to process in background
+    EdgeRuntime.waitUntil(
+      (async () => {
+        try {
+          const renderRes = await fetch(`${SHOTSTACK_BASE}/render`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': SHOTSTACK_API_KEY,
+            },
+            body: JSON.stringify(renderBody),
+          });
+
+          const renderData = await renderRes.json();
+
+          if (!renderRes.ok) {
+            console.error('[compile-video] Shotstack error:', JSON.stringify(renderData));
+            await supabase
+              .from('compilation_jobs')
+              .update({ status: 'failed', error_message: `Shotstack API error: ${renderData?.response?.message || renderRes.statusText}` })
+              .eq('id', job.id);
+            return;
+          }
+
+          const renderId = renderData?.response?.id;
+          console.log(`[compile-video] Render submitted: ${renderId}`);
+
+          await supabase
+            .from('compilation_jobs')
+            .update({ render_id: renderId })
+            .eq('id', job.id);
+        } catch (err) {
+          console.error('[compile-video] Background error:', err);
+          await supabase
+            .from('compilation_jobs')
+            .update({ status: 'failed', error_message: err instanceof Error ? err.message : 'Unknown error' })
+            .eq('id', job.id);
+        }
+      })()
+    );
+
     return new Response(JSON.stringify({
       jobId: job.id,
-      renderId,
       status: 'processing',
       message: 'Compilation started in the cloud!',
     }), {

@@ -6,11 +6,11 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { CompileFilters } from '@/components/compile/CompileFilters';
 import { SelectableClipThumbnail } from '@/components/compile/SelectableClipThumbnail';
 import { DurationCounter } from '@/components/compile/DurationCounter';
-import { CompilationProgress } from '@/components/compile/CompilationProgress';
+import { CloudCompilationProgress } from '@/components/compile/CloudCompilationProgress';
 import { CompilationResultSheet } from '@/components/compile/CompilationResultSheet';
 import { useJourneys } from '@/hooks/useJourneys';
 import { useCompileClips, TagFilter } from '@/hooks/useCompileClips';
-import { useVideoCompilation } from '@/hooks/useVideoCompilation';
+import { useCloudCompilation } from '@/hooks/useCloudCompilation';
 import { useCompilations } from '@/hooks/useCompilations';
 import { Compilation } from '@/types/journey';
 import { toast } from 'sonner';
@@ -39,17 +39,20 @@ const Compile: React.FC = () => {
     endDate,
   });
 
-  const { progress, compiledBlob, compiledUrl, compile, reset } = useVideoCompilation();
-  const { saveCompilation, drafts, deleteCompilation, promoteDraft } = useCompilations();
+  // Cloud compilation
+  const { progress: cloudProgress, resultUrl: cloudResultUrl, submit: cloudSubmit, reset: cloudReset } = useCloudCompilation();
+  const { saveCompilationFromUrl, drafts, deleteCompilation, promoteDraft } = useCompilations();
+  
   const [showResult, setShowResult] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const savedRef = useRef(false);
 
-  // Track if save happened so we know draft is not needed
+  // Show result sheet when cloud compilation completes
   useEffect(() => {
-    savedRef.current = isSaved;
-  }, [isSaved]);
+    if (cloudProgress.stage === 'completed' && cloudResultUrl) {
+      setShowResult(true);
+    }
+  }, [cloudProgress.stage, cloudResultUrl]);
 
   const handleCompile = async () => {
     if (selectedClips.length === 0) {
@@ -57,16 +60,26 @@ const Compile: React.FC = () => {
       return;
     }
 
-    const clipMetas = selectedClips.map(c => ({ url: c.uri, dayNumber: c.dayNumber }));
-    const blob = await compile(clipMetas);
-    
-    if (blob) {
-      setShowResult(true);
-    }
+    const journeyName = selectedJourneyId !== 'all'
+      ? journeys.find(j => j.id === selectedJourneyId)?.name
+      : undefined;
+
+    const title = journeyName
+      ? `${journeyName} Compilation`
+      : `Compilation - ${new Date().toLocaleDateString()}`;
+
+    await cloudSubmit({
+      clipUrls: selectedClips.map(c => c.uri),
+      clipDayNumbers: selectedClips.map(c => c.dayNumber ?? null),
+      title,
+      journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
+      duration: totalDuration,
+      clipCount: selectedClips.length,
+    });
   };
 
   const handleSaveToApp = async () => {
-    if (!compiledBlob) return;
+    if (!cloudResultUrl) return;
 
     setIsSaving(true);
     try {
@@ -78,9 +91,9 @@ const Compile: React.FC = () => {
         ? `${journeyName} Compilation`
         : `Compilation - ${new Date().toLocaleDateString()}`;
 
-      const result = await saveCompilation({
+      const result = await saveCompilationFromUrl({
         title,
-        videoBlob: compiledBlob,
+        videoUrl: cloudResultUrl,
         duration: totalDuration,
         clipCount: selectedClips.length,
         clipIds: selectedClips.map(c => c.id),
@@ -101,52 +114,16 @@ const Compile: React.FC = () => {
     }
   };
 
-  const saveDraft = useCallback(async () => {
-    if (!compiledBlob || savedRef.current) return;
-
-    try {
-      const journeyName = selectedJourneyId !== 'all'
-        ? journeys.find(j => j.id === selectedJourneyId)?.name
-        : undefined;
-
-      const title = journeyName
-        ? `${journeyName} Draft`
-        : `Draft - ${new Date().toLocaleDateString()}`;
-
-      await saveCompilation({
-        title,
-        videoBlob: compiledBlob,
-        duration: totalDuration,
-        clipCount: selectedClips.length,
-        clipIds: selectedClips.map(c => c.id),
-        journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
-        isDraft: true,
-      });
-
-      toast.info('Video saved to draft. Find it in your Profile');
-    } catch {
-      // Silently fail for draft saves
-      console.error('Failed to save draft');
-    }
-  }, [compiledBlob, selectedJourneyId, journeys, totalDuration, selectedClips, saveCompilation]);
-
-  const handleCloseResult = async () => {
-    if (!isSaved && compiledBlob) {
-      // Auto-save as draft
-      await saveDraft();
-    }
+  const handleCloseResult = () => {
     setShowResult(false);
-    reset();
+    cloudReset();
     setIsSaved(false);
     if (isSaved) {
       navigate('/reels');
     }
   };
 
-  const handleBack = async () => {
-    if (compiledBlob && !savedRef.current) {
-      await saveDraft();
-    }
+  const handleBack = () => {
     navigate(-1);
   };
 
@@ -168,7 +145,7 @@ const Compile: React.FC = () => {
     }
   };
 
-  const isCompiling = progress.stage !== 'idle' && progress.stage !== 'done' && progress.stage !== 'error';
+  const isCompiling = cloudProgress.stage === 'submitting' || cloudProgress.stage === 'processing';
 
   return (
     <>
@@ -289,17 +266,15 @@ const Compile: React.FC = () => {
         isCompiling={isCompiling}
       />
 
-      {/* Compilation progress overlay */}
-      {progress.stage !== 'idle' && progress.stage !== 'done' && (
-        <CompilationProgress {...progress} />
-      )}
+      {/* Cloud compilation progress overlay */}
+      <CloudCompilationProgress progress={cloudProgress} />
 
       {/* Result sheet */}
       <CompilationResultSheet
         open={showResult}
         onClose={handleCloseResult}
-        videoUrl={compiledUrl}
-        videoBlob={compiledBlob}
+        videoUrl={cloudResultUrl}
+        videoBlob={null}
         onSaveToApp={handleSaveToApp}
         isSaving={isSaving}
         isSaved={isSaved}

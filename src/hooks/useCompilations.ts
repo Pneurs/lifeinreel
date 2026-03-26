@@ -220,6 +220,7 @@ export const useCompilations = () => {
     drafts,
     loading,
     saveCompilation,
+    saveCompilationFromUrl,
     promoteDraft,
     deleteCompilation,
     refetch: fetchCompilations,

@@ -476,7 +476,7 @@ export const useVideoRecording = ({
       return recordedBlobRef.current;
     };
 
-    const blobToSave = recordedBlobRef.current || (await waitForRecordedBlob());
+    let blobToSave = recordedBlobRef.current || (await waitForRecordedBlob());
 
     if (!blobToSave) {
       const msg = 'No recording found to save.';

@@ -476,7 +476,7 @@ export const useVideoRecording = ({
       return recordedBlobRef.current;
     };
 
-    const blobToSave = recordedBlobRef.current || (await waitForRecordedBlob());
+    let blobToSave = recordedBlobRef.current || (await waitForRecordedBlob());
 
     if (!blobToSave) {
       const msg = 'No recording found to save.';
@@ -501,6 +501,16 @@ export const useVideoRecording = ({
     isSavingRef.current = true;
     setIsSaving(true);
     setError(null);
+
+    // Standardize clip format for instant compilation (720p, H.264, baseline)
+    try {
+      const { standardizeClip } = await import('@/lib/ffmpeg-compiler');
+      const standardized = await standardizeClip(blobToSave);
+      blobToSave = standardized;
+      console.log('[saveRecording] Clip standardized for fast compilation');
+    } catch (err) {
+      console.warn('[saveRecording] Standardization skipped, using raw blob:', err);
+    }
 
     // Determine file extension based on blob type
     const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;

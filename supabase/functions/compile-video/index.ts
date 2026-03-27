@@ -91,7 +91,10 @@ Deno.serve(async (req) => {
       },
       output: {
         format: 'mp4',
-        resolution: 'hd',
+        size: {
+          width: 720,
+          height: 1280,
+        },
         fps: 30,
       },
     };

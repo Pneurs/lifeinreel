@@ -76,7 +76,7 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
 
         {/* Preview */}
         {videoUrl && (
-          <div className="rounded-2xl overflow-hidden bg-muted mb-6 aspect-video">
+          <div className="rounded-2xl overflow-hidden bg-muted mb-6 aspect-[9/16] max-h-[50vh] mx-auto">
             <video
               src={videoUrl}
               className="w-full h-full object-cover"

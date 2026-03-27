@@ -58,22 +58,24 @@ Deno.serve(async (req) => {
       length: CLIP_DURATION,
     }));
 
-    // Build overlay track for day labels
+    // Build overlay track for day labels using title assets
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
           overlayClips.push({
             asset: {
-              type: 'html',
-              html: `<p style="font-family:'Helvetica Neue',sans-serif;font-size:36px;font-weight:bold;color:white;background:rgba(230,126,34,0.85);padding:6px 20px;border-radius:10px;text-align:center;">Day ${dayNum}</p>`,
-              width: 300,
-              height: 60,
+              type: 'title',
+              text: `Day ${dayNum}`,
+              style: 'chunk',
+              size: 'small',
+              color: '#ffffff',
+              background: '#e67e22',
+              position: 'bottom',
+              offset: { y: 0.05 },
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
-            position: 'bottom',
-            offset: { y: -0.15 },
           });
         }
       });

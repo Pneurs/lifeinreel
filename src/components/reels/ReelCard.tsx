@@ -81,7 +81,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         className="w-full h-full object-contain bg-background"
         loop
         playsInline
-        muted
+        muted={isMuted}
         onClick={togglePlay}
       />
 

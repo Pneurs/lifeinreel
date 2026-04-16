@@ -50,9 +50,10 @@ Deno.serve(async (req) => {
 
     // Build Shotstack timeline
     const CLIP_DURATION = 2;
+    const totalDuration = clipUrls.length * CLIP_DURATION;
 
     const videoClips = clipUrls.map((url: string, i: number) => ({
-      asset: { type: 'video', src: url, volume: 1 },
+      asset: { type: 'video', src: url, volume: soundtrackUrl ? 0 : 1 },
       start: i * CLIP_DURATION,
       length: CLIP_DURATION,
     }));
@@ -88,13 +89,41 @@ Deno.serve(async (req) => {
 
     const timeline: any = { tracks };
 
-    // Add soundtrack if provided
+    // Add soundtrack if provided — use soundtrack with fadeOut
+    // Shotstack's soundtrack automatically trims to video length
+    // For looping: we repeat the audio asset on a dedicated audio track
     if (soundtrackUrl && typeof soundtrackUrl === 'string') {
+      // Get the track duration from the request (or estimate from metadata)
+      // We'll use the soundtrack property for simple cases and an audio track for looping
+      const musicDurationSec = duration || totalDuration;
+      
+      // Build repeating audio clips to cover the full video duration
+      // Each audio clip plays the full track, positioned sequentially
+      // We estimate a reasonable track length (90s default) and repeat as needed
+      const estimatedTrackLength = 90; // seconds - safe default
+      const audioClips: any[] = [];
+      let audioStart = 0;
+      
+      while (audioStart < totalDuration) {
+        const remaining = totalDuration - audioStart;
+        audioClips.push({
+          asset: { type: 'audio', src: soundtrackUrl, volume: 1 },
+          start: audioStart,
+          length: Math.min(estimatedTrackLength, remaining),
+        });
+        audioStart += estimatedTrackLength;
+      }
+      
+      // Add audio track at the bottom (plays behind everything)
+      tracks.push({ clips: audioClips });
+      
+      // Also add fadeOut effect via soundtrack for clean ending
       timeline.soundtrack = {
         src: soundtrackUrl,
         effect: 'fadeOut',
       };
-      console.log(`[compile-video] Adding soundtrack: ${soundtrackUrl}`);
+      
+      console.log(`[compile-video] Adding soundtrack with looping: ${soundtrackUrl}, video duration: ${totalDuration}s`);
     }
 
     const renderBody = {

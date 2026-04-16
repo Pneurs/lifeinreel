@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { clipUrls, clipDayNumbers, title, journeyId, duration, clipCount } = await req.json();
+    const { clipUrls, clipDayNumbers, title, journeyId, duration, clipCount, soundtrackUrl } = await req.json();
 
     if (!clipUrls || !Array.isArray(clipUrls) || clipUrls.length === 0) {
       return new Response(JSON.stringify({ error: 'No clips provided' }), {
@@ -49,7 +49,6 @@ Deno.serve(async (req) => {
     }
 
     // Build Shotstack timeline
-    // Each clip is ~2 seconds (standardized at recording time)
     const CLIP_DURATION = 2;
 
     const videoClips = clipUrls.map((url: string, i: number) => ({
@@ -58,7 +57,7 @@ Deno.serve(async (req) => {
       length: CLIP_DURATION,
     }));
 
-    // Build overlay track for day labels using title assets
+    // Build overlay track for day labels
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
@@ -87,23 +86,29 @@ Deno.serve(async (req) => {
     }
     tracks.push({ clips: videoClips });
 
+    const timeline: any = { tracks };
+
+    // Add soundtrack if provided
+    if (soundtrackUrl && typeof soundtrackUrl === 'string') {
+      timeline.soundtrack = {
+        src: soundtrackUrl,
+        effect: 'fadeOut',
+      };
+      console.log(`[compile-video] Adding soundtrack: ${soundtrackUrl}`);
+    }
+
     const renderBody = {
-      timeline: {
-        tracks,
-      },
+      timeline,
       output: {
         format: 'mp4',
-        size: {
-          width: 720,
-          height: 1280,
-        },
+        size: { width: 720, height: 1280 },
         fps: 30,
       },
     };
 
     console.log(`[compile-video] Submitting ${clipUrls.length} clips to Shotstack (${SHOTSTACK_ENV})`);
 
-    // Create job record first so we can return immediately
+    // Create job record
     const { data: job, error: dbError } = await supabase
       .from('compilation_jobs')
       .insert({
@@ -124,7 +129,7 @@ Deno.serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
 
-    // Use EdgeRuntime.waitUntil to process in background
+    // Process in background
     EdgeRuntime.waitUntil(
       (async () => {
         try {

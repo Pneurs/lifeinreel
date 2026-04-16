@@ -76,10 +76,29 @@ const Record: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setIsMuted(true);
+    setSelectedFilter(FILTER_OPTIONS[0]);
     retakeCooldownRef.current = true;
     retake();
     // Guard long enough for all lingering touch/mouse/click events to pass
     setTimeout(() => { retakeCooldownRef.current = false; }, 600);
+  };
+
+  // Bake the selected filter into the recorded blob (no-op if "Normal")
+  const bakeFilterIfNeeded = async (): Promise<boolean> => {
+    if (!selectedFilter.css || !previewUrl) return true;
+    try {
+      setIsApplyingFilter(true);
+      // Fetch current recorded blob from the preview URL
+      const currentBlob = await fetch(previewUrl).then((r) => r.blob());
+      const filtered = await applyFilterToClip(currentBlob, selectedFilter.css);
+      replaceRecordedBlob(filtered);
+      return true;
+    } catch (err) {
+      console.warn('[Record] Filter baking failed, using original clip:', err);
+      return true; // proceed with original clip
+    } finally {
+      setIsApplyingFilter(false);
+    }
   };
 
   // Handle touch/mouse events for recording

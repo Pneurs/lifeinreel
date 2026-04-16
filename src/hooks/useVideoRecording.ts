@@ -248,9 +248,12 @@ export const useVideoRecording = ({
     }
   }, [stream, maxDuration]);
 
-  // Speed up a raw blob by playing at 2.5x into a canvas and re-recording
-  const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string) => {
+  // Speed up a raw blob by playing at 2x into a canvas and re-recording.
+  // Optionally bakes a CSS filter in the SAME pass — no second playthrough needed.
+  const speedUpBlob = useCallback(async (rawBlob: Blob, mimeType: string, filterCss?: string | null) => {
     setIsProcessing(true);
+    // Remember raw so we can re-bake with a different filter without re-recording
+    rawBlobRef.current = rawBlob;
     try {
       const speedFactor = 2.0;
       const video = document.createElement('video');
@@ -269,6 +272,8 @@ export const useVideoRecording = ({
       canvas.width = video.videoWidth || 1080;
       canvas.height = video.videoHeight || 1920;
       const ctx = canvas.getContext('2d')!;
+      // Bake filter into every drawn frame — costs nothing extra vs unfiltered
+      ctx.filter = filterCss || 'none';
 
       const canvasStream = canvas.captureStream(30);
 
@@ -319,6 +324,7 @@ export const useVideoRecording = ({
       recordingMimeTypeRef.current = outputMime;
       recordedBlobRef.current = speedBlob;
       setRecordedBlob(speedBlob);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       const url = URL.createObjectURL(speedBlob);
       previewUrlRef.current = url;
       setPreviewUrl(url);
@@ -327,6 +333,7 @@ export const useVideoRecording = ({
       // Fallback: use raw blob as-is
       recordedBlobRef.current = rawBlob;
       setRecordedBlob(rawBlob);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       const url = URL.createObjectURL(rawBlob);
       previewUrlRef.current = url;
       setPreviewUrl(url);
@@ -334,6 +341,15 @@ export const useVideoRecording = ({
       setIsProcessing(false);
     }
   }, []);
+
+  // Re-bake the recorded clip from raw with a CSS filter, in a SINGLE canvas pass.
+  // Use this instead of running a separate filter pass on the already-speedup blob.
+  const rebakeWithFilter = useCallback(async (filterCss: string | null): Promise<boolean> => {
+    const raw = rawBlobRef.current;
+    if (!raw) return false;
+    await speedUpBlob(raw, recordingMimeTypeRef.current, filterCss);
+    return true;
+  }, [speedUpBlob]);
 
   // Stop recording
   const stopRecording = useCallback(() => {

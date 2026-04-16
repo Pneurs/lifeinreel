@@ -427,9 +427,9 @@ const Record: React.FC = () => {
               variant="primary"
               size="iconLg"
               onClick={handleSave}
-              disabled={isSaving || !previewUrl}
+              disabled={isSaving || isApplyingFilter || !previewUrl}
             >
-              {isSaving ? (
+              {isSaving || isApplyingFilter ? (
                 <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Check className="w-7 h-7" />

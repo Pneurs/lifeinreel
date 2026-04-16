@@ -268,7 +268,17 @@ const Record: React.FC = () => {
               muted
               preload="auto"
               className="flex-1 w-full object-contain bg-black"
+              style={{ filter: selectedFilter.css || 'none' }}
             />
+            {/* Filter strip */}
+            <div className="bg-black/80 backdrop-blur-sm border-t border-background/10">
+              <FilterStrip
+                selectedId={selectedFilter.id}
+                onSelect={setSelectedFilter}
+                previewSrc={previewUrl}
+                disabled={isApplyingFilter || isSaving}
+              />
+            </div>
           </div>
         ) : null}
 

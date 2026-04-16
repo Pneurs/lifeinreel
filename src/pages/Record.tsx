@@ -376,6 +376,18 @@ const Record: React.FC = () => {
         </div>
       )}
 
+      {/* Filter strip — above bottom controls, only on preview */}
+      {hasRecorded && previewUrl && (
+        <div className="absolute bottom-36 left-0 right-0 z-20 bg-black/80 backdrop-blur-sm border-y border-background/10">
+          <FilterStrip
+            selectedId={selectedFilter.id}
+            onSelect={setSelectedFilter}
+            previewSrc={previewUrl}
+            disabled={isApplyingFilter || isSaving}
+          />
+        </div>
+      )}
+
       {/* Bottom controls */}
       <div className="absolute bottom-0 left-0 right-0 pb-12 px-6 z-10">
         {!hasRecorded ? (

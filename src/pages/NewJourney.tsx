@@ -51,12 +51,9 @@ const journeyTypes = [
     color: 'bg-secondary/10 text-secondary border-secondary/20',
     activeColor: 'bg-secondary text-secondary-foreground border-secondary',
   },
-  const addJourneyPayload = async (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount' | 'lastCaptureDate'>) => {
-    return addJourney(journey);
-  };
+];
 
-  // Keep journeyTypes reference for photo fallback
-  const journeyTypesRef = journeyTypes;
+const NewJourney: React.FC = () => {
   const navigate = useNavigate();
   const { addJourney } = useJourneys();
   

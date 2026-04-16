@@ -386,6 +386,7 @@ export const useVideoRecording = ({
     setIsProcessing(false);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
+    rawBlobRef.current = null;
     setRecordingTime(0);
     chunksRef.current = [];
     setError(null);

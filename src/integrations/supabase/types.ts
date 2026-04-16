@@ -171,6 +171,33 @@ export type Database = {
         }
         Relationships: []
       }
+      music_tracks: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          file_url: string
+          id: string
+          mood: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          file_url: string
+          id?: string
+          mood: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          file_url?: string
+          id?: string
+          mood?: string
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

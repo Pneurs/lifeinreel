@@ -743,5 +743,6 @@ export const useVideoRecording = ({
     saveRecording,
     setVideoRef,
     flipCamera,
+    replaceRecordedBlob,
   };
 };

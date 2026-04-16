@@ -221,7 +221,8 @@ export const useVideoRecording = ({
 
       mediaRecorder.onstop = () => {
         const rawBlob = new Blob(chunksRef.current, { type: mimeType });
-        // Speed up the raw recording to ~2s
+        // Speed up the raw recording to ~2s. Filter (if any) is applied later via replaceRecordedBlob,
+        // OR — for best perf — callers can re-run speedUpBlob with a filter once chosen.
         speedUpBlob(rawBlob, mimeType);
       };
 

@@ -60,7 +60,22 @@ export const CompileFilters: React.FC<CompileFiltersProps> = ({
           <SelectItem value="all">All Journeys</SelectItem>
           {journeys.map((journey) => (
             <SelectItem key={journey.id} value={journey.id}>
-              {journey.name}
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center bg-muted text-[10px]">
+                  {journey.photo ? (
+                    <img src={journey.photo} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      {journey.type === 'child' && '👶'}
+                      {journey.type === 'weightloss' && '💪'}
+                      {journey.type === 'pregnancy' && '🤰'}
+                      {journey.type === 'travel' && '✈️'}
+                      {journey.type === 'custom' && '🎯'}
+                    </>
+                  )}
+                </div>
+                <span>{journey.name}</span>
+              </div>
             </SelectItem>
           ))}
         </SelectContent>

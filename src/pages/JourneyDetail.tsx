@@ -22,7 +22,7 @@ type TabType = 'timeline' | 'weekly' | 'monthly';
 const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { journeys } = useJourneys();
+  const { journeys, updateJourney } = useJourneys();
   const { clips, loading: clipsLoading, toggleHighlight, toggleBestOf, deleteClip, refetch } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);

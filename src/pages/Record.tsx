@@ -7,6 +7,8 @@ import { useVideoRecording } from '@/hooks/useVideoRecording';
 import { useCameraZoom } from '@/hooks/useCameraZoom';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneySelector } from '@/components/record/JourneySelector';
+import { FilterStrip } from '@/components/record/FilterStrip';
+import { FILTER_OPTIONS, applyFilterToClip, type FilterOption } from '@/lib/clip-filter';
 import { toast } from 'sonner';
 
 const Record: React.FC = () => {
@@ -19,6 +21,8 @@ const Record: React.FC = () => {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<FilterOption>(FILTER_OPTIONS[0]);
+  const [isApplyingFilter, setIsApplyingFilter] = useState(false);
   const retakeCooldownRef = useRef(false);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {
@@ -47,6 +51,7 @@ const Record: React.FC = () => {
     saveRecording,
     retake,
     flipCamera,
+    replaceRecordedBlob,
   } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 4, minDuration: 2 });
 
   // Initialize camera on mount
@@ -71,10 +76,29 @@ const Record: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setIsMuted(true);
+    setSelectedFilter(FILTER_OPTIONS[0]);
     retakeCooldownRef.current = true;
     retake();
     // Guard long enough for all lingering touch/mouse/click events to pass
     setTimeout(() => { retakeCooldownRef.current = false; }, 600);
+  };
+
+  // Bake the selected filter into the recorded blob (no-op if "Normal")
+  const bakeFilterIfNeeded = async (): Promise<boolean> => {
+    if (!selectedFilter.css || !previewUrl) return true;
+    try {
+      setIsApplyingFilter(true);
+      // Fetch current recorded blob from the preview URL
+      const currentBlob = await fetch(previewUrl).then((r) => r.blob());
+      const filtered = await applyFilterToClip(currentBlob, selectedFilter.css);
+      replaceRecordedBlob(filtered);
+      return true;
+    } catch (err) {
+      console.warn('[Record] Filter baking failed, using original clip:', err);
+      return true; // proceed with original clip
+    } finally {
+      setIsApplyingFilter(false);
+    }
   };
 
   // Handle touch/mouse events for recording
@@ -114,7 +138,10 @@ const Record: React.FC = () => {
 
     const journeyId = selectedJourneyId;
     console.log('[Record] Calling saveRecording with journeyId:', journeyId);
-    
+
+    // Bake selected filter into the clip first (no-op if Normal)
+    await bakeFilterIfNeeded();
+
     // Pass journeyId directly to avoid stale closure
     const result = await saveRecording(journeyId);
     console.log('[Record] saveRecording result:', result);
@@ -145,7 +172,10 @@ const Record: React.FC = () => {
     }
     
     console.log('[Record] Calling saveRecording with journeyId:', journeyId);
-    
+
+    // Bake selected filter into the clip first (no-op if Normal)
+    await bakeFilterIfNeeded();
+
     // Pass journeyId directly to saveRecording to avoid stale state
     const result = await saveRecording(journeyId);
     console.log('[Record] saveRecording result:', result);
@@ -238,7 +268,17 @@ const Record: React.FC = () => {
               muted
               preload="auto"
               className="flex-1 w-full object-contain bg-black"
+              style={{ filter: selectedFilter.css || 'none' }}
             />
+            {/* Filter strip */}
+            <div className="bg-black/80 backdrop-blur-sm border-t border-background/10">
+              <FilterStrip
+                selectedId={selectedFilter.id}
+                onSelect={setSelectedFilter}
+                previewSrc={previewUrl}
+                disabled={isApplyingFilter || isSaving}
+              />
+            </div>
           </div>
         ) : null}
 
@@ -387,9 +427,9 @@ const Record: React.FC = () => {
               variant="primary"
               size="iconLg"
               onClick={handleSave}
-              disabled={isSaving || !previewUrl}
+              disabled={isSaving || isApplyingFilter || !previewUrl}
             >
-              {isSaving ? (
+              {isSaving || isApplyingFilter ? (
                 <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Check className="w-7 h-7" />

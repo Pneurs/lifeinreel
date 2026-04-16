@@ -14,6 +14,7 @@ const mapJourney = (j: any): Journey => ({
   createdAt: j.created_at,
   lastCaptureDate: j.last_capture_date || undefined,
   clipCount: j.clip_count,
+  showDayNumbers: j.show_day_numbers ?? true,
 });
 
 const fetchJourneysFromDb = async () => {
@@ -51,6 +52,7 @@ export const useJourneys = () => {
         description: journey.description || null,
         date_of_birth: journey.dateOfBirth || null,
         photo: journey.photo || null,
+        show_day_numbers: journey.showDayNumbers ?? true,
       })
       .select()
       .single();

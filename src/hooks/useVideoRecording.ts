@@ -705,6 +705,18 @@ export const useVideoRecording = ({
     await initCamera(newMode);
   }, [initCamera]);
 
+  // Replace the current recorded blob (e.g. after applying a post-record filter)
+  const replaceRecordedBlob = useCallback((newBlob: Blob) => {
+    recordedBlobRef.current = newBlob;
+    setRecordedBlob(newBlob);
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+    const url = URL.createObjectURL(newBlob);
+    previewUrlRef.current = url;
+    setPreviewUrl(url);
+  }, []);
+
   return {
     // State
     isRecording,

@@ -68,15 +68,15 @@ Deno.serve(async (req) => {
           overlayClips.push({
             asset: {
               type: 'html',
-              html: `<p style="font-family:Montserrat,sans-serif;font-weight:700;font-size:28px;color:#fff;background:#e67e22;padding:8px 20px;border-radius:10px;display:inline-block;margin:0;">Day ${dayNum}</p>`,
-              css: 'p { text-align: center; }',
-              width: 280,
-              height: 60,
+              html: `<div class="badge">Day ${dayNum}</div>`,
+              css: `.badge { font-family: Montserrat, sans-serif; font-weight: 700; font-size: 28px; color: #fff; background: #e67e22; padding: 8px 20px; border-radius: 10px; text-align: center; display: inline-block; }`,
+              width: 160,
+              height: 50,
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
             position: 'bottom',
-            offset: { y: 0.06 },
+            offset: { y: 0.18 },
           });
         }
       });

@@ -7,6 +7,8 @@ import { useVideoRecording } from '@/hooks/useVideoRecording';
 import { useCameraZoom } from '@/hooks/useCameraZoom';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneySelector } from '@/components/record/JourneySelector';
+import { FilterStrip } from '@/components/record/FilterStrip';
+import { FILTER_OPTIONS, applyFilterToClip, type FilterOption } from '@/lib/clip-filter';
 import { toast } from 'sonner';
 
 const Record: React.FC = () => {

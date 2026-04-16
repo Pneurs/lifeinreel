@@ -44,6 +44,7 @@ export const useVideoRecording = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const recordedBlobRef = useRef<Blob | null>(null);
+  const rawBlobRef = useRef<Blob | null>(null); // pre-speedup raw, used to re-bake with a filter in a single pass
   const recordingMimeTypeRef = useRef<string>('video/webm');
   const isSavingRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);

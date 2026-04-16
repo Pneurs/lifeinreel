@@ -58,7 +58,7 @@ export const JourneyPickerSheet: React.FC<JourneyPickerSheetProps> = ({
                 {/* Journey icon */}
                 <div
                   className={cn(
-                    'w-12 h-12 rounded-xl flex items-center justify-center text-xl',
+                    'w-12 h-12 rounded-xl flex items-center justify-center text-xl overflow-hidden',
                     journey.type === 'child' && 'bg-primary/20',
                     journey.type === 'weightloss' && 'bg-destructive/20',
                     journey.type === 'pregnancy' && 'bg-secondary/20',
@@ -66,11 +66,17 @@ export const JourneyPickerSheet: React.FC<JourneyPickerSheetProps> = ({
                     journey.type === 'custom' && 'bg-accent/20'
                   )}
                 >
-                  {journey.type === 'child' && '👶'}
-                  {journey.type === 'weightloss' && '💪'}
-                  {journey.type === 'pregnancy' && '🤰'}
-                  {journey.type === 'travel' && '✈️'}
-                  {journey.type === 'custom' && '🎯'}
+                  {journey.photo ? (
+                    <img src={journey.photo} alt={journey.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      {journey.type === 'child' && '👶'}
+                      {journey.type === 'weightloss' && '💪'}
+                      {journey.type === 'pregnancy' && '🤰'}
+                      {journey.type === 'travel' && '✈️'}
+                      {journey.type === 'custom' && '🎯'}
+                    </>
+                  )}
                 </div>
 
                 <div className="flex-1 text-left">

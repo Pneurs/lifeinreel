@@ -46,8 +46,12 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey }) => {
       onClick={() => navigate(`/journey/${journey.id}`)}
       className="w-full bg-card rounded-2xl p-4 shadow-sm border border-border/50 flex items-center gap-4 active:scale-[0.98] transition-transform"
     >
-      <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center', colorClass)}>
-        <Icon className="w-7 h-7" />
+      <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden', colorClass)}>
+        {journey.photo ? (
+          <img src={journey.photo} alt={journey.name} className="w-full h-full object-cover" />
+        ) : (
+          <Icon className="w-7 h-7" />
+        )}
       </div>
       
       <div className="flex-1 text-left">

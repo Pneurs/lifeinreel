@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneyType } from '@/types/journey';
 import { cn } from '@/lib/utils';
+import { JourneyPhotoUpload } from '@/components/journey/JourneyPhotoUpload';
 
 const journeyTypes = [
   { 
@@ -60,6 +61,7 @@ const NewJourney: React.FC = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [photo, setPhoto] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,6 +74,7 @@ const NewJourney: React.FC = () => {
       type: selectedType,
       description: description.trim() || undefined,
       dateOfBirth: dateOfBirth || undefined,
+      photo: photo || undefined,
     });
 
     if (result) {
@@ -131,6 +134,22 @@ const NewJourney: React.FC = () => {
       {/* Form fields */}
       {selectedType && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {/* Photo upload */}
+          <div className="flex flex-col items-center gap-2">
+            <JourneyPhotoUpload
+              currentPhoto={photo}
+              onPhotoUploaded={setPhoto}
+              size="lg"
+              fallbackIcon={(() => {
+                const jt = journeyTypes.find(j => j.type === selectedType);
+                if (!jt) return undefined;
+                const Icon = jt.icon;
+                return <Icon className="w-8 h-8 text-muted-foreground" />;
+              })()}
+            />
+            <p className="text-xs text-muted-foreground">Tap to add a photo</p>
+          </div>
+
           <div>
             <label className="text-sm font-semibold text-muted-foreground mb-2 block">
               {selectedType === 'child' ? "Child's name" : 'Journey name'}

@@ -50,6 +50,7 @@ export const useJourneys = () => {
         type: journey.type,
         description: journey.description || null,
         date_of_birth: journey.dateOfBirth || null,
+        photo: journey.photo || null,
       })
       .select()
       .single();
@@ -64,9 +65,33 @@ export const useJourneys = () => {
     return newJourney;
   };
 
+  const updateJourney = async (journeyId: string, updates: { photo?: string; name?: string; description?: string }) => {
+    if (!user) return false;
+
+    const dbUpdates: Record<string, any> = {};
+    if (updates.photo !== undefined) dbUpdates.photo = updates.photo;
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+
+    const { error } = await supabase
+      .from('journeys')
+      .update(dbUpdates)
+      .eq('id', journeyId);
+
+    if (error) {
+      console.error('Error updating journey:', error);
+      return false;
+    }
+
+    queryClient.setQueryData(['journeys', user.id], (old: Journey[] = []) =>
+      old.map((j) => (j.id === journeyId ? { ...j, ...updates } : j))
+    );
+    return true;
+  };
+
   const refetch = () => queryClient.invalidateQueries({ queryKey: ['journeys', user?.id] });
 
-  return { journeys, loading, addJourney, refetch };
+  return { journeys, loading, addJourney, updateJourney, refetch };
 };
 
 export const useJourneyClips = (journeyId: string) => {

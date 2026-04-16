@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Baby, Dumbbell, Heart, Plane, Target } from 'lucide-react';
 import { ArrowLeft, Camera, Star, Play, PlayCircle } from 'lucide-react';
+import { JourneyPhotoUpload } from '@/components/journey/JourneyPhotoUpload';
+import { JourneyType } from '@/types/journey';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ClipThumbnail } from '@/components/journey/ClipThumbnail';
@@ -14,12 +17,16 @@ import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { VideoClip } from '@/types/journey';
 
+const journeyIcons: Record<JourneyType, React.ElementType> = {
+  child: Baby, weightloss: Dumbbell, pregnancy: Heart, travel: Plane, custom: Target,
+};
+
 type TabType = 'timeline' | 'weekly' | 'monthly';
 
 const JourneyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { journeys } = useJourneys();
+  const { journeys, updateJourney } = useJourneys();
   const { clips, loading: clipsLoading, toggleHighlight, toggleBestOf, deleteClip, refetch } = useJourneyClips(id || '');
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [previewClip, setPreviewClip] = useState<VideoClip | null>(null);
@@ -104,6 +111,17 @@ const JourneyDetail: React.FC = () => {
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
+            <JourneyPhotoUpload
+              currentPhoto={journey.photo}
+              onPhotoUploaded={async (url) => {
+                await updateJourney(journey.id, { photo: url });
+              }}
+              size="sm"
+              fallbackIcon={(() => {
+                const Icon = journeyIcons[journey.type];
+                return <Icon className="w-6 h-6 text-muted-foreground" />;
+              })()}
+            />
             <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">{journey.name}</h1>
               <p className="text-sm text-muted-foreground">{journey.clipCount} clips captured</p>

@@ -17,6 +17,10 @@ import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { VideoClip } from '@/types/journey';
 
+const journeyIcons: Record<JourneyType, React.ElementType> = {
+  child: Baby, weightloss: Dumbbell, pregnancy: Heart, travel: Plane, custom: Target,
+};
+
 type TabType = 'timeline' | 'weekly' | 'monthly';
 
 const JourneyDetail: React.FC = () => {
@@ -107,6 +111,17 @@ const JourneyDetail: React.FC = () => {
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
+            <JourneyPhotoUpload
+              currentPhoto={journey.photo}
+              onPhotoUploaded={async (url) => {
+                await updateJourney(journey.id, { photo: url });
+              }}
+              size="sm"
+              fallbackIcon={(() => {
+                const Icon = journeyIcons[journey.type];
+                return <Icon className="w-6 h-6 text-muted-foreground" />;
+              })()}
+            />
             <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">{journey.name}</h1>
               <p className="text-sm text-muted-foreground">{journey.clipCount} clips captured</p>

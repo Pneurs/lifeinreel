@@ -70,9 +70,15 @@ const Compile: React.FC = () => {
       ? `${journeyName} Compilation`
       : `Compilation - ${new Date().toLocaleDateString()}`;
 
+    // Check if the selected journey has day numbers enabled
+    const selectedJourney = selectedJourneyId !== 'all'
+      ? journeys.find(j => j.id === selectedJourneyId)
+      : undefined;
+    const showDayNumbers = selectedJourney?.showDayNumbers ?? true;
+
     await cloudSubmit({
       clipUrls: selectedClips.map(c => c.uri),
-      clipDayNumbers: selectedClips.map(c => c.dayNumber ?? null),
+      clipDayNumbers: showDayNumbers ? selectedClips.map(c => c.dayNumber ?? null) : undefined,
       title,
       journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
       duration: totalDuration,

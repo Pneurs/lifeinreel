@@ -15,6 +15,7 @@ interface SubmitParams {
   journeyId?: string;
   duration: number;
   clipCount: number;
+  soundtrackUrl?: string;
 }
 
 interface UseCloudCompilationReturn {
@@ -79,6 +80,7 @@ export const useCloudCompilation = (): UseCloudCompilationReturn => {
           journeyId: params.journeyId,
           duration: params.duration,
           clipCount: params.clipCount,
+          soundtrackUrl: params.soundtrackUrl,
         }),
       });
 

@@ -50,9 +50,10 @@ Deno.serve(async (req) => {
 
     // Build Shotstack timeline
     const CLIP_DURATION = 2;
+    const totalDuration = clipUrls.length * CLIP_DURATION;
 
     const videoClips = clipUrls.map((url: string, i: number) => ({
-      asset: { type: 'video', src: url, volume: 1 },
+      asset: { type: 'video', src: url, volume: soundtrackUrl ? 0 : 1 },
       start: i * CLIP_DURATION,
       length: CLIP_DURATION,
     }));
@@ -89,12 +90,33 @@ Deno.serve(async (req) => {
     const timeline: any = { tracks };
 
     // Add soundtrack if provided
+    // Use audio track clips for looping support (repeats when video > track length)
+    // Shotstack's soundtrack property doesn't loop, so we manually tile audio clips
     if (soundtrackUrl && typeof soundtrackUrl === 'string') {
-      timeline.soundtrack = {
-        src: soundtrackUrl,
-        effect: 'fadeOut',
-      };
-      console.log(`[compile-video] Adding soundtrack: ${soundtrackUrl}`);
+      const estimatedTrackLength = 90; // seconds - safe default for most tracks
+      const audioClips: any[] = [];
+      let audioStart = 0;
+      
+      while (audioStart < totalDuration) {
+        const remaining = totalDuration - audioStart;
+        const isLast = remaining <= estimatedTrackLength;
+        audioClips.push({
+          asset: { 
+            type: 'audio', 
+            src: soundtrackUrl, 
+            volume: 1,
+            ...(isLast ? { effect: 'fadeOut' } : {}),
+          },
+          start: audioStart,
+          length: Math.min(estimatedTrackLength, remaining),
+        });
+        audioStart += estimatedTrackLength;
+      }
+      
+      // Add audio track at the bottom (plays behind video)
+      tracks.push({ clips: audioClips });
+      
+      console.log(`[compile-video] Adding soundtrack with looping: ${soundtrackUrl}, video duration: ${totalDuration}s, audio segments: ${audioClips.length}`);
     }
 
     const renderBody = {

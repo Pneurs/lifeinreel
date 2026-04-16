@@ -21,6 +21,8 @@ const Record: React.FC = () => {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<FilterOption>(FILTER_OPTIONS[0]);
+  const [isApplyingFilter, setIsApplyingFilter] = useState(false);
   const retakeCooldownRef = useRef(false);
 
   const videoCallbackRef = useCallback((el: HTMLVideoElement | null) => {

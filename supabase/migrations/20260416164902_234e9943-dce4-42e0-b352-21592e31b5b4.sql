@@ -1,0 +1,1 @@
+ALTER TABLE public.journeys ADD COLUMN show_day_numbers boolean NOT NULL DEFAULT true;

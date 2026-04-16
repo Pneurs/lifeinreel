@@ -51,9 +51,12 @@ const journeyTypes = [
     color: 'bg-secondary/10 text-secondary border-secondary/20',
     activeColor: 'bg-secondary text-secondary-foreground border-secondary',
   },
-];
+  const addJourneyPayload = async (journey: Omit<Journey, 'id' | 'createdAt' | 'clipCount' | 'lastCaptureDate'>) => {
+    return addJourney(journey);
+  };
 
-const NewJourney: React.FC = () => {
+  // Keep journeyTypes reference for photo fallback
+  const journeyTypesRef = journeyTypes;
   const navigate = useNavigate();
   const { addJourney } = useJourneys();
   
@@ -134,6 +137,22 @@ const NewJourney: React.FC = () => {
       {/* Form fields */}
       {selectedType && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {/* Photo upload */}
+          <div className="flex flex-col items-center gap-2">
+            <JourneyPhotoUpload
+              currentPhoto={photo}
+              onPhotoUploaded={setPhoto}
+              size="lg"
+              fallbackIcon={(() => {
+                const jt = journeyTypes.find(j => j.type === selectedType);
+                if (!jt) return undefined;
+                const Icon = jt.icon;
+                return <Icon className="w-8 h-8 text-muted-foreground" />;
+              })()}
+            />
+            <p className="text-xs text-muted-foreground">Tap to add a photo</p>
+          </div>
+
           <div>
             <label className="text-sm font-semibold text-muted-foreground mb-2 block">
               {selectedType === 'child' ? "Child's name" : 'Journey name'}

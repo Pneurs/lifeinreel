@@ -84,12 +84,16 @@ const Record: React.FC = () => {
     setTimeout(() => { retakeCooldownRef.current = false; }, 600);
   };
 
-  // Bake the selected filter into the recorded blob (no-op if "Normal")
+  // Bake the selected filter into the recorded blob via a single canvas pass from raw.
+  // Falls back to the legacy second-pass approach if the raw blob isn't available.
   const bakeFilterIfNeeded = async (): Promise<boolean> => {
     if (!selectedFilter.css || !previewUrl) return true;
     try {
       setIsApplyingFilter(true);
-      // Fetch current recorded blob from the preview URL
+      // Preferred: single-pass re-bake from raw (no extra playthrough)
+      const ok = await rebakeWithFilter(selectedFilter.css);
+      if (ok) return true;
+      // Fallback: filter the already-speedup blob (older path)
       const currentBlob = await fetch(previewUrl).then((r) => r.blob());
       const filtered = await applyFilterToClip(currentBlob, selectedFilter.css);
       replaceRecordedBlob(filtered);

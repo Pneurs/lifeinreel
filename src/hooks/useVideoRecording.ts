@@ -502,15 +502,9 @@ export const useVideoRecording = ({
     setIsSaving(true);
     setError(null);
 
-    // Standardize clip format for instant compilation (720p, H.264, baseline)
-    try {
-      const { standardizeClip } = await import('@/lib/ffmpeg-compiler');
-      const standardized = await standardizeClip(blobToSave);
-      blobToSave = standardized;
-      console.log('[saveRecording] Clip standardized for fast compilation');
-    } catch (err) {
-      console.warn('[saveRecording] Standardization skipped, using raw blob:', err);
-    }
+    // Note: We intentionally do NOT run client-side ffmpeg standardization here.
+    // Compilation is handled by Shotstack Cloud which normalizes inputs server-side,
+    // so paying a 5–15s ffmpeg.wasm re-encode per save is pure overhead.
 
     // Determine file extension based on blob type
     const effectiveMime = blobToSave.type || recordingMimeTypeRef.current;

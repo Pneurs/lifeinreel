@@ -264,21 +264,11 @@ const Record: React.FC = () => {
               autoPlay
               loop
               playsInline
-              controls
               muted
               preload="auto"
-              className="flex-1 w-full object-contain bg-black"
-              style={{ filter: selectedFilter.css || 'none' }}
+              className="flex-1 w-full object-contain bg-black min-h-0"
+              style={{ filter: selectedFilter.css || 'none', paddingBottom: '13rem' }}
             />
-            {/* Filter strip */}
-            <div className="bg-black/80 backdrop-blur-sm border-t border-background/10">
-              <FilterStrip
-                selectedId={selectedFilter.id}
-                onSelect={setSelectedFilter}
-                previewSrc={previewUrl}
-                disabled={isApplyingFilter || isSaving}
-              />
-            </div>
           </div>
         ) : null}
 
@@ -383,6 +373,18 @@ const Record: React.FC = () => {
             <span>{minDuration}s min</span>
             <span>{maxDuration}s max</span>
           </div>
+        </div>
+      )}
+
+      {/* Filter strip — above bottom controls, only on preview */}
+      {hasRecorded && previewUrl && (
+        <div className="absolute bottom-36 left-0 right-0 z-20 bg-black/80 backdrop-blur-sm border-y border-background/10">
+          <FilterStrip
+            selectedId={selectedFilter.id}
+            onSelect={setSelectedFilter}
+            previewSrc={previewUrl}
+            disabled={isApplyingFilter || isSaving}
+          />
         </div>
       )}
 

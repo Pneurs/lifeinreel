@@ -1,82 +1,32 @@
 
 
-The user is asking whether applying filters AFTER recording (post-processing per clip) is also tricky, as an alternative to the live-preview approach I proposed.
+The user can't tap filter options in the FilterStrip on the post-record preview. Let me analyze the code to find the issue.
 
-Let me think through this:
+Looking at `src/pages/Record.tsx`:
+- The preview screen renders a `<video controls>` with `flex-1` taking most space
+- Below it is the FilterStrip
+- The whole thing is inside `absolute inset-0` container
+- BUT — the bottom controls (`pb-12 px-6 z-10`) are also `absolute bottom-0 left-0 right-0` — these overlap the FilterStrip!
 
-**Post-recording filter approach:**
-- User records normally (no filter pipeline during capture)
-- After recording, in the preview/save step, user picks a filter
-- Filter is applied to the saved clip before upload
+The bottom controls section contains the Save/Retake buttons positioned absolutely at the bottom with `pb-12`. The FilterStrip is inside the flex column of the preview area, so it sits at the bottom of that column — exactly where the absolute bottom controls overlay it. The bottom controls have `z-10` while the FilterStrip's container doesn't have an explicit z-index, so the controls intercept all taps on the filter buttons.
 
-**How to bake filter into recorded clip without FFmpeg:**
-1. Load recorded blob into a `<video>` element
-2. Play it through, drawing each frame to a `<canvas>` with `ctx.filter` applied
-3. Use `MediaRecorder` on `canvas.captureStream()` + original audio track to record a new filtered clip
-4. Replace the original blob with the filtered one before upload
+Also the `<video controls>` shows native controls which can also cover the strip on some browsers.
 
-This is actually **simpler and safer** than the live-preview approach because:
-- Recording itself stays unchanged (no risk of breaking iOS recording reliability — which our memory says is already fragile)
-- No real-time canvas pipeline during capture (saves battery/CPU during recording)
-- User can preview filters and pick the best one (better UX — try before commit)
-- If filter processing fails, we still have the original clip as fallback
+**Fix plan:**
 
-**Trade-offs:**
-- Adds ~2-4s processing time after recording (real-time playback through canvas)
-- Slightly delays the save flow
+1. **Restructure the preview layout** in `src/pages/Record.tsx` so the FilterStrip sits ABOVE the bottom action buttons (Retake/Save), not underneath them. Specifically:
+   - Move the FilterStrip out of the absolute video container and place it inside the bottom controls area, positioned above the Retake/Save row when `hasRecorded` is true.
+   - OR add bottom padding to the preview flex container equal to the bottom controls height, and bump the FilterStrip's z-index to `z-20` so it sits above the action row but doesn't visually collide.
 
-**Verdict:** Post-recording is actually **less tricky** than live-preview-and-bake. Better fit for this app.
+   Cleanest approach: render the FilterStrip inside the bottom controls block (above the Retake/Save row) so they're naturally stacked and tappable.
 
-Plan should be concise — present this approach clearly.
+2. **Remove `controls` from the preview `<video>`** — the native control bar overlaps the bottom of the video and can intercept touches near the FilterStrip. The clip is short (2s) and auto-loops; native controls aren't needed.
 
-## Apply Filters After Recording (Per Clip)
+3. **Ensure the preview video container leaves room** — change the preview video to not consume `flex-1` all the way to the bottom; cap its height so the FilterStrip + action buttons have dedicated tappable space.
 
-### Short Answer
+### Files to change
 
-**It's actually easier and safer than live filters.** Recording stays untouched (important since iOS recording is already fragile in this app), and users get to preview filters before committing.
+- **`src/pages/Record.tsx`** — restructure the `hasRecorded && previewUrl` block: keep the preview header + video in the upper area, move the FilterStrip into the bottom controls section (rendered above the Retake/Save row only when `hasRecorded`), remove `controls` from the preview video, and add appropriate bottom padding to avoid overlap.
 
-### How It Works
-
-1. User records normally — no changes to capture pipeline
-2. In the post-record preview screen (where they currently see the 2x sped-up clip), a horizontal filter strip appears below the preview
-3. Tapping a filter applies it instantly via CSS to the preview `<video>`
-4. When user taps "Save", we "bake" the chosen filter into the clip before upload
-5. Original clip is kept as fallback if baking fails
-
-### Filter Baking (No FFmpeg, No Libraries)
-
-```text
-recorded blob → <video> element
-            ↓ (play through once, ~2s)
-       <canvas> with ctx.filter = "brightness(1.1) saturate(1.3)"
-            ↓
-   canvas.captureStream() + original audio track
-            ↓
-       MediaRecorder → filtered blob → upload
-```
-
-Adds **2-4 seconds** to the save flow (real-time playthrough). No new dependencies.
-
-### Filters Offered
-
-Same set as before: Normal, Bright, Warm, Cool, Vivid, Fade, B&W — all pure CSS filter strings.
-
-### Files to Change
-
-1. **Create `src/components/record/FilterStrip.tsx`** — horizontal scrollable filter selector with circular previews
-2. **Create `src/lib/clip-filter.ts`** — `applyFilterToClip(blob, filterCss): Promise<Blob>` using the canvas pipeline above
-3. **Update `src/pages/Record.tsx`** — show filter strip on the post-record preview, apply CSS to preview video, run baking before upload on save
-4. **Update `src/hooks/useVideoRecording.ts`** — accept optional filter param in the save handler
-
-### Why This Beats Live Filters
-
-| | Live (during recording) | Post-record (this plan) |
-|---|---|---|
-| Recording reliability | Risk — changes capture pipeline | Untouched — zero risk |
-| Battery during capture | Higher (canvas runs while recording) | Same as today |
-| Try before commit | No — locked in | Yes — preview each filter |
-| Implementation risk | Higher (iOS quirks) | Low |
-| Save delay | None | +2-4s |
-
-The small save delay is a fair trade for not destabilizing recording.
+No other files need changes. FilterStrip itself is fine — its buttons already have `type="button"` and proper handlers.
 

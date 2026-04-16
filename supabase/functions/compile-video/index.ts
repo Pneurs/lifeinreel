@@ -63,16 +63,16 @@ Deno.serve(async (req) => {
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
+          // Use HTML asset for custom styling with padding and rounded corners
           overlayClips.push({
             asset: {
-              type: 'title',
-              text: `Day ${dayNum}`,
-              style: 'chunk',
-              size: 'small',
-              color: '#ffffff',
-              background: '#e67e22',
+              type: 'html',
+              html: `<p style="font-family:Montserrat,sans-serif;font-weight:700;font-size:28px;color:#fff;background:#e67e22;padding:8px 20px;border-radius:10px;display:inline-block;margin:0;">Day ${dayNum}</p>`,
+              css: 'p { text-align: center; }',
+              width: 280,
+              height: 60,
               position: 'bottom',
-              offset: { y: 0.05 },
+              offset: { y: 0.06 },
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,

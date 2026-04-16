@@ -5,6 +5,7 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { IOSButton } from '@/components/ui/ios-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneyType } from '@/types/journey';
 import { cn } from '@/lib/utils';
@@ -62,6 +63,7 @@ const NewJourney: React.FC = () => {
   const [description, setDescription] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [photo, setPhoto] = useState('');
+  const [showDayNumbers, setShowDayNumbers] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -75,6 +77,7 @@ const NewJourney: React.FC = () => {
       description: description.trim() || undefined,
       dateOfBirth: dateOfBirth || undefined,
       photo: photo || undefined,
+      showDayNumbers,
     });
 
     if (result) {
@@ -190,6 +193,15 @@ const NewJourney: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Day number toggle */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Show day numbers</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Display "Day X" badge on compiled reels</p>
+            </div>
+            <Switch checked={showDayNumbers} onCheckedChange={setShowDayNumbers} />
+          </div>
 
           <IOSButton
             onClick={handleCreate}

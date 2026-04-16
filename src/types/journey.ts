@@ -10,6 +10,7 @@ export interface Journey {
   createdAt: string;
   lastCaptureDate?: string;
   clipCount: number;
+  showDayNumbers?: boolean;
 }
 
 export interface VideoClip {

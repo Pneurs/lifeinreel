@@ -139,6 +139,7 @@ export type Database = {
           last_capture_date: string | null
           name: string
           photo: string | null
+          show_day_numbers: boolean
           type: string
           updated_at: string
           user_id: string
@@ -152,6 +153,7 @@ export type Database = {
           last_capture_date?: string | null
           name: string
           photo?: string | null
+          show_day_numbers?: boolean
           type: string
           updated_at?: string
           user_id: string
@@ -165,6 +167,7 @@ export type Database = {
           last_capture_date?: string | null
           name?: string
           photo?: string | null
+          show_day_numbers?: boolean
           type?: string
           updated_at?: string
           user_id?: string

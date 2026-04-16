@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
           // Use HTML asset for custom styling with padding and rounded corners
+          // NOTE: position/offset belong on the clip, NOT on the asset
           overlayClips.push({
             asset: {
               type: 'html',
@@ -71,11 +72,11 @@ Deno.serve(async (req) => {
               css: 'p { text-align: center; }',
               width: 280,
               height: 60,
-              position: 'bottom',
-              offset: { y: 0.06 },
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
+            position: 'bottom',
+            offset: { y: 0.06 },
           });
         }
       });

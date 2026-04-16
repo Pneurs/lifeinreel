@@ -25,13 +25,17 @@ export const ReelCard: React.FC<ReelCardProps> = ({
     if (!video) return;
 
     if (isActive) {
-      video.muted = true; // Always start muted for autoplay compatibility
-      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      video.muted = false;
+      video.play().then(() => setIsPlaying(true)).catch(() => {
+        // Autoplay without sound as fallback
+        video.muted = true;
+        setIsMuted(true);
+        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      });
     } else {
       video.pause();
       video.currentTime = 0;
       setIsPlaying(false);
-      setIsMuted(true); // Reset mute state when scrolling away
     }
   }, [isActive]);
 

@@ -201,6 +201,19 @@ export const MusicPicker: React.FC<MusicPickerProps> = ({ selectedTrack, onSelec
       </div>
 
       <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+        {/* None card */}
+        <div
+          onClick={() => onSelect(null)}
+          className={`flex-shrink-0 w-36 rounded-xl border-2 p-3 cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 ${
+            !selectedTrack
+              ? 'border-primary bg-primary/5'
+              : 'border-border bg-card hover:border-muted-foreground/30'
+          }`}
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+          <span className="text-xs font-medium text-foreground">No Music</span>
+        </div>
+
         {/* Upload card */}
         <div
           onClick={() => !uploading && fileInputRef.current?.click()}

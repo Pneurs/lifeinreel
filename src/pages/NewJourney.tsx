@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useJourneys } from '@/hooks/useJourneys';
 import { JourneyType } from '@/types/journey';
 import { cn } from '@/lib/utils';
+import { JourneyPhotoUpload } from '@/components/journey/JourneyPhotoUpload';
 
 const journeyTypes = [
   { 
@@ -60,6 +61,7 @@ const NewJourney: React.FC = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [photo, setPhoto] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,6 +74,7 @@ const NewJourney: React.FC = () => {
       type: selectedType,
       description: description.trim() || undefined,
       dateOfBirth: dateOfBirth || undefined,
+      photo: photo || undefined,
     });
 
     if (result) {

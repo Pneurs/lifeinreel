@@ -51,6 +51,7 @@ const Record: React.FC = () => {
     saveRecording,
     retake,
     flipCamera,
+    replaceRecordedBlob,
   } = useVideoRecording({ journeyId: selectedJourneyId, maxDuration: 4, minDuration: 2 });
 
   // Initialize camera on mount

@@ -89,41 +89,34 @@ Deno.serve(async (req) => {
 
     const timeline: any = { tracks };
 
-    // Add soundtrack if provided — use soundtrack with fadeOut
-    // Shotstack's soundtrack automatically trims to video length
-    // For looping: we repeat the audio asset on a dedicated audio track
+    // Add soundtrack if provided
+    // Use audio track clips for looping support (repeats when video > track length)
+    // Shotstack's soundtrack property doesn't loop, so we manually tile audio clips
     if (soundtrackUrl && typeof soundtrackUrl === 'string') {
-      // Get the track duration from the request (or estimate from metadata)
-      // We'll use the soundtrack property for simple cases and an audio track for looping
-      const musicDurationSec = duration || totalDuration;
-      
-      // Build repeating audio clips to cover the full video duration
-      // Each audio clip plays the full track, positioned sequentially
-      // We estimate a reasonable track length (90s default) and repeat as needed
-      const estimatedTrackLength = 90; // seconds - safe default
+      const estimatedTrackLength = 90; // seconds - safe default for most tracks
       const audioClips: any[] = [];
       let audioStart = 0;
       
       while (audioStart < totalDuration) {
         const remaining = totalDuration - audioStart;
+        const isLast = remaining <= estimatedTrackLength;
         audioClips.push({
-          asset: { type: 'audio', src: soundtrackUrl, volume: 1 },
+          asset: { 
+            type: 'audio', 
+            src: soundtrackUrl, 
+            volume: 1,
+            ...(isLast ? { effect: 'fadeOut' } : {}),
+          },
           start: audioStart,
           length: Math.min(estimatedTrackLength, remaining),
         });
         audioStart += estimatedTrackLength;
       }
       
-      // Add audio track at the bottom (plays behind everything)
+      // Add audio track at the bottom (plays behind video)
       tracks.push({ clips: audioClips });
       
-      // Also add fadeOut effect via soundtrack for clean ending
-      timeline.soundtrack = {
-        src: soundtrackUrl,
-        effect: 'fadeOut',
-      };
-      
-      console.log(`[compile-video] Adding soundtrack with looping: ${soundtrackUrl}, video duration: ${totalDuration}s`);
+      console.log(`[compile-video] Adding soundtrack with looping: ${soundtrackUrl}, video duration: ${totalDuration}s, audio segments: ${audioClips.length}`);
     }
 
     const renderBody = {

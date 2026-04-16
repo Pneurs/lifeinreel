@@ -138,7 +138,10 @@ const Record: React.FC = () => {
 
     const journeyId = selectedJourneyId;
     console.log('[Record] Calling saveRecording with journeyId:', journeyId);
-    
+
+    // Bake selected filter into the clip first (no-op if Normal)
+    await bakeFilterIfNeeded();
+
     // Pass journeyId directly to avoid stale closure
     const result = await saveRecording(journeyId);
     console.log('[Record] saveRecording result:', result);

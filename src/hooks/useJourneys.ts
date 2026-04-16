@@ -50,6 +50,7 @@ export const useJourneys = () => {
         type: journey.type,
         description: journey.description || null,
         date_of_birth: journey.dateOfBirth || null,
+        photo: journey.photo || null,
       })
       .select()
       .single();

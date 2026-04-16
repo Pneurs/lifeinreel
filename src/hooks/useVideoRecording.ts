@@ -758,5 +758,5 @@ export const useVideoRecording = ({
     setVideoRef,
     flipCamera,
     replaceRecordedBlob,
-  };
+    rebakeWithFilter,
 };

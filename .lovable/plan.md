@@ -1,50 +1,82 @@
 
 
-## Add Background Music to Compilations
+The user is asking whether applying filters AFTER recording (post-processing per clip) is also tricky, as an alternative to the live-preview approach I proposed.
 
-### Approach: Pre-built Music Library
+Let me think through this:
 
-Store 5-10 royalty-free tracks in a `music` storage bucket. Users pick a track (or "No music") before compiling. Shotstack handles the audio mixing server-side.
+**Post-recording filter approach:**
+- User records normally (no filter pipeline during capture)
+- After recording, in the preview/save step, user picks a filter
+- Filter is applied to the saved clip before upload
 
-### What You Need To Do
+**How to bake filter into recorded clip without FFmpeg:**
+1. Load recorded blob into a `<video>` element
+2. Play it through, drawing each frame to a `<canvas>` with `ctx.filter` applied
+3. Use `MediaRecorder` on `canvas.captureStream()` + original audio track to record a new filtered clip
+4. Replace the original blob with the filtered one before upload
 
-Provide 5-10 royalty-free MP3 files (30-120s each). Good free sources:
-- **Pixabay Music** (pixabay.com/music) — free, no attribution
-- **Uppbeat** (uppbeat.io) — free tier available
-- Name them descriptively: `upbeat-happy.mp3`, `calm-reflective.mp3`, etc.
+This is actually **simpler and safer** than the live-preview approach because:
+- Recording itself stays unchanged (no risk of breaking iOS recording reliability — which our memory says is already fragile)
+- No real-time canvas pipeline during capture (saves battery/CPU during recording)
+- User can preview filters and pick the best one (better UX — try before commit)
+- If filter processing fails, we still have the original clip as fallback
 
-### Implementation Steps
+**Trade-offs:**
+- Adds ~2-4s processing time after recording (real-time playback through canvas)
+- Slightly delays the save flow
 
-**1. Storage bucket + music metadata table**
-- Create a `music` public storage bucket
-- Create a `music_tracks` table (id, name, mood, file_url, duration) — seeded with track metadata
-- Upload the MP3s you provide to the bucket
+**Verdict:** Post-recording is actually **less tricky** than live-preview-and-bake. Better fit for this app.
 
-**2. Music picker UI on Compile page**
-- Add a horizontal scrollable row of track cards below the filters
-- Each card shows: name, mood tag, duration, play/preview button
-- Tapping selects the track (highlight border); tap again to deselect
-- "No music" option selected by default
-- Small inline audio player for 10s preview
+Plan should be concise — present this approach clearly.
 
-**3. Pass music URL to Shotstack**
-- Update `compile-video` edge function to accept `soundtrackUrl` parameter
-- Add Shotstack `soundtrack` property to the render body:
-  ```json
-  {
-    "timeline": { "soundtrack": { "src": "<music_url>", "effect": "fadeOut" } }
-  }
-  ```
-- Music auto-fades at the end of the compilation
+## Apply Filters After Recording (Per Clip)
 
-**4. Update compile flow**
-- `useCloudCompilation` hook passes selected track URL
-- `Compile.tsx` manages selected track state
+### Short Answer
 
-### Technical Details
+**It's actually easier and safer than live filters.** Recording stays untouched (important since iOS recording is already fragile in this app), and users get to preview filters before committing.
 
-- Shotstack's `soundtrack` property handles mixing — no extra processing needed
-- `fadeOut` effect ensures clean ending regardless of track/video length mismatch
-- Tracks stored publicly so Shotstack can fetch them directly
-- No database migration needed for `compilation_jobs` — the music URL is only used at render time
+### How It Works
+
+1. User records normally — no changes to capture pipeline
+2. In the post-record preview screen (where they currently see the 2x sped-up clip), a horizontal filter strip appears below the preview
+3. Tapping a filter applies it instantly via CSS to the preview `<video>`
+4. When user taps "Save", we "bake" the chosen filter into the clip before upload
+5. Original clip is kept as fallback if baking fails
+
+### Filter Baking (No FFmpeg, No Libraries)
+
+```text
+recorded blob → <video> element
+            ↓ (play through once, ~2s)
+       <canvas> with ctx.filter = "brightness(1.1) saturate(1.3)"
+            ↓
+   canvas.captureStream() + original audio track
+            ↓
+       MediaRecorder → filtered blob → upload
+```
+
+Adds **2-4 seconds** to the save flow (real-time playthrough). No new dependencies.
+
+### Filters Offered
+
+Same set as before: Normal, Bright, Warm, Cool, Vivid, Fade, B&W — all pure CSS filter strings.
+
+### Files to Change
+
+1. **Create `src/components/record/FilterStrip.tsx`** — horizontal scrollable filter selector with circular previews
+2. **Create `src/lib/clip-filter.ts`** — `applyFilterToClip(blob, filterCss): Promise<Blob>` using the canvas pipeline above
+3. **Update `src/pages/Record.tsx`** — show filter strip on the post-record preview, apply CSS to preview video, run baking before upload on save
+4. **Update `src/hooks/useVideoRecording.ts`** — accept optional filter param in the save handler
+
+### Why This Beats Live Filters
+
+| | Live (during recording) | Post-record (this plan) |
+|---|---|---|
+| Recording reliability | Risk — changes capture pipeline | Untouched — zero risk |
+| Battery during capture | Higher (canvas runs while recording) | Same as today |
+| Try before commit | No — locked in | Yes — preview each filter |
+| Implementation risk | Higher (iOS quirks) | Low |
+| Save delay | None | +2-4s |
+
+The small save delay is a fair trade for not destabilizing recording.
 

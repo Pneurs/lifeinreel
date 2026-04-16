@@ -4,6 +4,7 @@ import { ArrowLeft, FileVideo, Trash2 } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { CompileFilters } from '@/components/compile/CompileFilters';
+import { MusicPicker, MusicTrack } from '@/components/compile/MusicPicker';
 import { SelectableClipThumbnail } from '@/components/compile/SelectableClipThumbnail';
 import { DurationCounter } from '@/components/compile/DurationCounter';
 import { CloudCompilationProgress } from '@/components/compile/CloudCompilationProgress';
@@ -24,6 +25,7 @@ const Compile: React.FC = () => {
   const [tagFilter, setTagFilter] = useState<TagFilter>('all');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
 
   const {
     clips,
@@ -75,6 +77,7 @@ const Compile: React.FC = () => {
       journeyId: selectedJourneyId !== 'all' ? selectedJourneyId : undefined,
       duration: totalDuration,
       clipCount: selectedClips.length,
+      soundtrackUrl: selectedMusic?.file_url,
     });
   };
 

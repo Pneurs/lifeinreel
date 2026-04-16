@@ -190,6 +190,7 @@ export const useVideoRecording = ({
     setRecordingTime(0);
     setRecordedBlob(null);
     recordedBlobRef.current = null;
+    rawBlobRef.current = null;
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;

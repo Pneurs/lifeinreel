@@ -182,6 +182,9 @@ const Compile: React.FC = () => {
           />
         </div>
 
+        {/* Music Picker */}
+        <MusicPicker selectedTrack={selectedMusic} onSelect={setSelectedMusic} />
+
         {/* Drafts section */}
         {drafts.length > 0 && (
           <div className="px-5 pt-4 pb-2">

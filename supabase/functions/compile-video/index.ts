@@ -69,17 +69,16 @@ Deno.serve(async (req) => {
     }));
 
     // Build overlay track for day labels using SVG-as-image overlay.
-    // This gives full control: rounded pill (rx), handwritten font (Caveat),
-    // and exact positioning (20% above the bottom of a 720x1280 frame).
+    // Shotstack rejects data: URIs, so we upload each unique badge SVG to the
+    // public `compilations` bucket and reference it by https URL.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      // Approx width based on character count; height is fixed.
       const charW = 38;
       const padX = 60;
       const width = Math.max(220, text.length * charW + padX * 2);
       const height = 130;
       const rx = height / 2;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;display=swap');
@@ -89,21 +88,46 @@ Deno.serve(async (req) => {
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
   <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
 </svg>`;
-      // URL-encode the SVG so it works as a data URI in Shotstack
-      const encoded = encodeURIComponent(svg)
-        .replace(/'/g, "%27")
-        .replace(/"/g, "%22");
-      return `data:image/svg+xml;charset=utf-8,${encoded}`;
     };
+
+    // Upload unique badges to storage and cache their public URLs by day number
+    const badgeUrlByDay = new Map<number, string>();
+    if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
+      const uniqueDays = Array.from(
+        new Set(
+          clipDayNumbers.filter((d: number | null): d is number => d != null),
+        ),
+      );
+      await Promise.all(uniqueDays.map(async (dayNum) => {
+        const svg = buildBadgeSvg(dayNum);
+        const path = `badges/day-${dayNum}-${user.id}-${Date.now()}.svg`;
+        const { error: upErr } = await supabase.storage
+          .from("compilations")
+          .upload(path, new Blob([svg], { type: "image/svg+xml" }), {
+            contentType: "image/svg+xml",
+            upsert: true,
+          });
+        if (upErr) {
+          console.error(`[compile-video] Badge upload failed for day ${dayNum}:`, upErr);
+          return;
+        }
+        const { data: pub } = supabase.storage
+          .from("compilations")
+          .getPublicUrl(path);
+        if (pub?.publicUrl) badgeUrlByDay.set(dayNum, pub.publicUrl);
+      }));
+    }
 
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
+          const src = badgeUrlByDay.get(dayNum);
+          if (!src) return;
           overlayClips.push({
             asset: {
               type: "image",
-              src: buildBadgeSvg(dayNum),
+              src,
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,

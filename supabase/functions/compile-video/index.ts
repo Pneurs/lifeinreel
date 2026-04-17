@@ -75,15 +75,17 @@ Deno.serve(async (req) => {
     // pill to be ~28% of the frame width with text that fills the pill.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      // Use a viewBox sized to the actual content so text fills the pill.
-      const fontSize = 80;
-      const charW = fontSize * 0.45; // Caveat is narrow
+      // Render at final display size (no downscaling later) so text stays crisp and large.
+      const fontSize = 56;
+      const charW = fontSize * 0.5; // Caveat metric estimate
       const padX = 28;
-      const padY = 10;
+      const padY = 14;
       const textW = Math.round(text.length * charW);
       const width = textW + padX * 2;
       const height = fontSize + padY * 2;
       const rx = height / 2;
+      // Nudge text baseline slightly down so it visually centers in the pill.
+      const textY = height / 2 + fontSize * 0.08;
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <style>
@@ -92,7 +94,7 @@ Deno.serve(async (req) => {
     </style>
   </defs>
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
+  <text x="50%" y="${textY}" text-anchor="middle" dominant-baseline="middle" class="t">${text}</text>
 </svg>`;
     };
 
@@ -140,7 +142,7 @@ Deno.serve(async (req) => {
             position: "bottom",
             offset: { y: 0.2 },
             fit: "none",
-            scale: 0.4,
+            scale: 1,
           });
         }
       });

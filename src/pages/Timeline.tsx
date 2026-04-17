@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Play } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,10 +104,7 @@ const Timeline: React.FC = () => {
     <>
       <MobileLayout>
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Timeline</h1>
-          <p className="text-muted-foreground">{format(today, 'MMMM yyyy')}</p>
-        </div>
+        <AppHeader subtitle={format(today, 'MMMM yyyy')} title="Timeline" />
 
         {/* Calendar */}
         <div className="bg-card rounded-2xl p-4 mb-6 border border-border/50">

@@ -71,13 +71,18 @@ Deno.serve(async (req) => {
     // Build overlay track for day labels using SVG-as-image overlay.
     // Shotstack rejects data: URIs, so we upload each unique badge SVG to the
     // public `compilations` bucket and reference it by https URL.
+    // Render badge as a tight SVG. Output frame is 720x1280; we want the
+    // pill to be ~28% of the frame width with text that fills the pill.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      const fontSize = 110;
-      const charW = fontSize * 0.55;
-      const padX = 36;
-      const height = 150;
-      const width = Math.max(180, Math.round(text.length * charW + padX * 2));
+      // Use a viewBox sized to the actual content so text fills the pill.
+      const fontSize = 80;
+      const charW = fontSize * 0.45; // Caveat is narrow
+      const padX = 28;
+      const padY = 10;
+      const textW = Math.round(text.length * charW);
+      const width = textW + padX * 2;
+      const height = fontSize + padY * 2;
       const rx = height / 2;
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
@@ -87,7 +92,7 @@ Deno.serve(async (req) => {
     </style>
   </defs>
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
-  <text x="50%" y="52%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
 </svg>`;
     };
 
@@ -135,7 +140,7 @@ Deno.serve(async (req) => {
             position: "bottom",
             offset: { y: 0.2 },
             fit: "none",
-            scale: 1,
+            scale: 0.4,
           });
         }
       });

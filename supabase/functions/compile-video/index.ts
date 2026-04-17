@@ -75,18 +75,22 @@ Deno.serve(async (req) => {
     // pill to be ~28% of the frame width with text that fills the pill.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      const width = Math.round(text.length * 38.4) + 44;
-      const height = 80;
+      const fontSize = 72;
+      const padX = 36;
+      const padY = 14;
+      // Approximate glyph width for Helvetica Bold at this size
+      const textWidth = Math.round(text.length * fontSize * 0.58);
+      const width = textWidth + padX * 2;
+      const height = fontSize + padY * 2;
       const rx = height / 2;
-      const textWidth = Math.round(width * 0.72);
-      const textY = height / 2 + 1;
+      // Use explicit y baseline (not dominant-baseline) for consistent rendering across renderers.
+      // For Helvetica, baseline ~= top + fontSize * 0.78 visually centers the cap-height.
+      const textY = padY + fontSize * 0.78;
 
-      // Stretch the label text slightly so it visually fills the pill and stays centered.
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22" fill-opacity="0.78"/>
-  <text x="${width / 2}" y="${textY}" text-anchor="middle" dominant-baseline="middle"
-        font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="72"
-        textLength="${textWidth}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">${text}</text>
+  <text x="${width / 2}" y="${textY}" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="${fontSize}" fill="#ffffff">${text}</text>
 </svg>`;
     };
 

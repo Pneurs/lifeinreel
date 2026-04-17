@@ -7,6 +7,7 @@ const corsHeaders = {
 
 const SHOTSTACK_ENV = Deno.env.get('SHOTSTACK_ENV') || 'stage';
 const SHOTSTACK_BASE = `https://api.shotstack.io/${SHOTSTACK_ENV}`;
+const DAY_BADGE_FONT_URL = 'https://fonts.gstatic.com/s/caveat/v23/WnznHAc5bAfYB2QRah7pcpNvOx-pjRV6SII.ttf';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -59,7 +60,6 @@ Deno.serve(async (req) => {
     }));
 
     // Build overlay track for day labels
-    // Use @font-face with declared font in timeline.fonts for reliable Google Font loading
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
@@ -67,15 +67,15 @@ Deno.serve(async (req) => {
           overlayClips.push({
             asset: {
               type: 'html',
-              html: `<div class="badge">Day ${dayNum}</div>`,
-              css: `@font-face{font-family:'Caveat';src:url('https://fonts.gstatic.com/s/caveat/v18/WnznHAc5bAfYB2QRah7pcpNvOx-pjcB9eIWpZTPNbeg.woff2') format('woff2');font-weight:700;font-style:normal;} *{margin:0;padding:0;box-sizing:border-box;} html,body{width:100%;height:100%;background:transparent;} body{display:flex;align-items:center;justify-content:center;} .badge{font-family:'Caveat',cursive;font-weight:700;font-size:44px;color:#ffffff;background:#e67e22;padding:6px 28px 10px;border-radius:999px;line-height:1;white-space:nowrap;}`,
-              width: 240,
-              height: 80,
+              html: `<div class="stage"><div class="badge">Day ${dayNum}</div></div>`,
+              css: `*{margin:0;padding:0;box-sizing:border-box;} html,body{width:100%;height:100%;background:transparent;overflow:visible;} body{display:flex;align-items:center;justify-content:center;font-family:'Caveat','Brush Script MT','Comic Sans MS',cursive;} .stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:10px 0;} .badge{display:inline-flex;align-items:center;justify-content:center;min-width:164px;padding:8px 24px 10px;border-radius:999px;background:#e67e22;color:#ffffff;font-family:'Caveat','Brush Script MT','Comic Sans MS',cursive;font-weight:700;font-size:42px;line-height:1;text-align:center;white-space:nowrap;}`,
+              width: 280,
+              height: 104,
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
             position: 'bottom',
-            offset: { y: 0.38 },
+            offset: { y: -0.12 },
           });
         }
       });
@@ -88,6 +88,9 @@ Deno.serve(async (req) => {
     tracks.push({ clips: videoClips });
 
     const timeline: any = { tracks };
+    if (overlayClips.length > 0) {
+      timeline.fonts = [{ src: DAY_BADGE_FONT_URL }];
+    }
 
     // Add soundtrack if provided
     // Use audio track clips for looping support (repeats when video > track length)

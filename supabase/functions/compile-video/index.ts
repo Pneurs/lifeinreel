@@ -75,26 +75,21 @@ Deno.serve(async (req) => {
     // pill to be ~28% of the frame width with text that fills the pill.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      // Render at final display size (no downscaling later) so text stays crisp and large.
-      const fontSize = 56;
-      const charW = fontSize * 0.5; // Caveat metric estimate
-      const padX = 28;
-      const padY = 14;
+      // Use a web-safe bold sans font that Shotstack's renderer reliably has.
+      // Caveat was silently falling back to a tiny default, making text appear small.
+      const fontSize = 64;
+      const charW = fontSize * 0.6; // bold sans metric estimate
+      const padX = 22;
+      const padY = 8;
       const textW = Math.round(text.length * charW);
       const width = textW + padX * 2;
       const height = fontSize + padY * 2;
       const rx = height / 2;
-      // Nudge text baseline slightly down so it visually centers in the pill.
-      const textY = height / 2 + fontSize * 0.08;
+      // 0.78 opacity gives a soft translucent feel over the video.
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <defs>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;display=swap');
-      .t { font-family: 'Caveat', 'Comic Sans MS', cursive; font-weight: 700; font-size: ${fontSize}px; fill: #ffffff; }
-    </style>
-  </defs>
-  <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
-  <text x="50%" y="${textY}" text-anchor="middle" dominant-baseline="middle" class="t">${text}</text>
+  <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22" fill-opacity="0.78"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="${fontSize}" fill="#ffffff">${text}</text>
 </svg>`;
     };
 

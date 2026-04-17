@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Sparkles } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { JourneyCard } from '@/components/journey/JourneyCard';
 import { IOSButton } from '@/components/ui/ios-button';
@@ -16,18 +17,19 @@ const Home: React.FC = () => {
     <>
       <MobileLayout>
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Welcome back</p>
-            <h1 className="text-2xl font-bold text-foreground">My Journeys</h1>
-          </div>
-          <button
-            onClick={() => navigate('/new-journey')}
-            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
-          >
-            <Plus className="w-5 h-5 text-primary" />
-          </button>
-        </div>
+        <AppHeader
+          subtitle="Welcome back"
+          title="My Journeys"
+          rightSlot={
+            <button
+              onClick={() => navigate('/new-journey')}
+              className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
+              aria-label="New journey"
+            >
+              <Plus className="w-5 h-5 text-primary" />
+            </button>
+          }
+        />
 
         {/* Daily reminder */}
         <div className="bg-gradient-to-r from-primary/10 to-accent rounded-2xl p-4 mb-6 flex items-center gap-4">

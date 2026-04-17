@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MobileLayout } from '@/components/layout/MobileLayout';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -85,6 +86,7 @@ const Profile: React.FC = () => {
   return (
     <>
       <MobileLayout>
+        <AppHeader title="You" />
         {/* Profile header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 mx-auto mb-4 flex items-center justify-center">

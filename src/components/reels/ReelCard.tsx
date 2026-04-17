@@ -1,7 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Play, Pause, Trash2, Share2, Download, Volume2, VolumeX } from 'lucide-react';
+import { Play, Trash2, Share2, Download, Volume2, VolumeX, Instagram, Facebook, Music2, MoreHorizontal } from 'lucide-react';
 import { Compilation } from '@/types/journey';
 import { format, parseISO } from 'date-fns';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { IOSButton } from '@/components/ui/ios-button';
+import {
+  shareNative,
+  shareToInstagram,
+  shareToFacebook,
+  shareToTikTok,
+  downloadVideo,
+} from '@/lib/share';
 
 interface ReelCardProps {
   compilation: Compilation;
@@ -14,11 +23,11 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   compilation,
   isActive,
   onDelete,
-  onShare,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -27,7 +36,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({
     if (isActive) {
       video.muted = false;
       video.play().then(() => setIsPlaying(true)).catch(() => {
-        // Autoplay without sound as fallback
         video.muted = true;
         setIsMuted(true);
         video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
@@ -42,7 +50,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-
     if (video.paused) {
       video.play().then(() => setIsPlaying(true));
     } else {
@@ -52,22 +59,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({
   };
 
   const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering play/pause
+    e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
-
     const newMuted = !isMuted;
     video.muted = newMuted;
     setIsMuted(newMuted);
-  };
-
-  const handleDownload = () => {
-    const a = document.createElement('a');
-    a.href = compilation.videoUrl;
-    a.download = `${compilation.title}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   const formatDuration = (secs: number) => {
@@ -76,9 +73,10 @@ export const ReelCard: React.FC<ReelCardProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const shareOpts = { title: compilation.title, videoUrl: compilation.videoUrl };
+
   return (
     <div className="relative w-full h-full bg-background snap-start snap-always flex-shrink-0">
-      {/* Video */}
       <video
         ref={videoRef}
         src={compilation.videoUrl}
@@ -89,7 +87,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         onClick={togglePlay}
       />
 
-      {/* Play/Pause overlay */}
       {!isPlaying && isActive && (
         <button
           onClick={togglePlay}
@@ -101,11 +98,11 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         </button>
       )}
 
-      {/* Mute/Unmute button */}
       {isActive && (
         <button
           onClick={toggleMute}
           className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
+          aria-label={isMuted ? 'Unmute' : 'Mute'}
         >
           {isMuted ? (
             <VolumeX className="w-5 h-5 text-foreground" />
@@ -115,7 +112,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         </button>
       )}
 
-      {/* Info overlay at bottom */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent p-5 pb-8">
         <h3 className="text-lg font-bold text-foreground mb-1">{compilation.title}</h3>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -127,27 +123,60 @@ export const ReelCard: React.FC<ReelCardProps> = ({
         </div>
       </div>
 
-      {/* Side actions */}
       <div className="absolute right-3 bottom-28 flex flex-col gap-4">
         <button
-          onClick={() => onShare?.(compilation)}
+          onClick={() => setShareOpen(true)}
           className="w-11 h-11 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
+          aria-label="Share"
         >
           <Share2 className="w-5 h-5 text-foreground" />
         </button>
         <button
-          onClick={handleDownload}
+          onClick={() => downloadVideo(shareOpts)}
           className="w-11 h-11 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
+          aria-label="Download"
         >
           <Download className="w-5 h-5 text-foreground" />
         </button>
         <button
           onClick={() => onDelete?.(compilation.id)}
           className="w-11 h-11 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-border/50"
+          aria-label="Delete"
         >
           <Trash2 className="w-5 h-5 text-destructive" />
         </button>
       </div>
+
+      {/* Share sheet */}
+      <Sheet open={shareOpen} onOpenChange={setShareOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl pb-10">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="text-foreground">Share Reel</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <IOSButton variant="soft" fullWidth onClick={() => { setShareOpen(false); shareToInstagram(shareOpts); }}>
+              <Instagram className="w-5 h-5" /> Instagram
+            </IOSButton>
+            <IOSButton variant="soft" fullWidth onClick={() => { setShareOpen(false); shareToFacebook(shareOpts); }}>
+              <Facebook className="w-5 h-5" /> Facebook
+            </IOSButton>
+            <IOSButton variant="soft" fullWidth onClick={() => { setShareOpen(false); shareToTikTok(shareOpts); }}>
+              <Music2 className="w-5 h-5" /> TikTok
+            </IOSButton>
+            <IOSButton variant="soft" fullWidth onClick={() => { setShareOpen(false); downloadVideo(shareOpts); }}>
+              <Download className="w-5 h-5" /> Download
+            </IOSButton>
+          </div>
+          <IOSButton
+            variant="ghost"
+            fullWidth
+            className="mt-3"
+            onClick={async () => { setShareOpen(false); await shareNative(shareOpts); }}
+          >
+            <MoreHorizontal className="w-5 h-5" /> More options
+          </IOSButton>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

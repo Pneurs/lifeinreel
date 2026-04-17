@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Baby, Dumbbell, Heart, Plane, Target } from 'lucide-react';
-import { ArrowLeft, Camera, Star, Play, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Camera, Star, Play, PlayCircle, Sparkles } from 'lucide-react';
 import { JourneyPhotoUpload } from '@/components/journey/JourneyPhotoUpload';
 import { JourneyType } from '@/types/journey';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -131,14 +131,26 @@ const JourneyDetail: React.FC = () => {
                 variant="soft"
                 size="icon"
                 onClick={() => setPlayAllOpen(true)}
+                aria-label="Play all"
               >
                 <PlayCircle className="w-5 h-5" />
+              </IOSButton>
+            )}
+            {clips.length > 0 && (
+              <IOSButton
+                variant="soft"
+                size="icon"
+                onClick={() => navigate(`/compile?journey=${id}`)}
+                aria-label="Create Reel"
+              >
+                <Sparkles className="w-5 h-5" />
               </IOSButton>
             )}
             <IOSButton
               variant="primary"
               size="icon"
               onClick={() => navigate(`/record?journey=${id}`)}
+              aria-label="Record"
             >
               <Camera className="w-5 h-5" />
             </IOSButton>

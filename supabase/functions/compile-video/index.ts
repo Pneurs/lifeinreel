@@ -83,7 +83,6 @@ Deno.serve(async (req) => {
               color: "#ffffff",
               background: "#e67e22",
               size: "medium",
-              font: "Permanent Marker",
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,

@@ -75,21 +75,18 @@ Deno.serve(async (req) => {
     // pill to be ~28% of the frame width with text that fills the pill.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      // Use a web-safe bold sans font that Shotstack's renderer reliably has.
-      // Caveat was silently falling back to a tiny default, making text appear small.
-      const fontSize = 64;
-      const charW = fontSize * 0.6; // bold sans metric estimate
-      const padX = 22;
-      const padY = 8;
-      const textW = Math.round(text.length * charW);
-      const width = textW + padX * 2;
-      const height = fontSize + padY * 2;
+      const width = Math.round(text.length * 38.4) + 44;
+      const height = 80;
       const rx = height / 2;
-      // 0.78 opacity gives a soft translucent feel over the video.
+      const textWidth = Math.round(width * 0.72);
+      const textY = height / 2 + 1;
+
+      // Stretch the label text slightly so it visually fills the pill and stays centered.
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22" fill-opacity="0.78"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-        font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="${fontSize}" fill="#ffffff">${text}</text>
+  <text x="${width / 2}" y="${textY}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="72"
+        textLength="${textWidth}" lengthAdjust="spacingAndGlyphs" fill="#ffffff">${text}</text>
 </svg>`;
     };
 

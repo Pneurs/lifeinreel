@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
             position: "bottom",
             offset: { y: 0.2 },
             fit: "none",
-            scale: 0.4,
+            scale: 1,
           });
         }
       });

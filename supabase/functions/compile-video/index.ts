@@ -68,26 +68,49 @@ Deno.serve(async (req) => {
       length: CLIP_DURATION,
     }));
 
-    // Build overlay track for day labels using native Shotstack title asset
-    // style: "chunk" renders a rounded pill background; offset.y: 0.2 lifts it
-    // ~20% of frame height above the bottom edge.
+    // Build overlay track for day labels using SVG-as-image overlay.
+    // This gives full control: rounded pill (rx), handwritten font (Caveat),
+    // and exact positioning (20% above the bottom of a 720x1280 frame).
+    const buildBadgeSvg = (dayNum: number): string => {
+      const text = `Day ${dayNum}`;
+      // Approx width based on character count; height is fixed.
+      const charW = 38;
+      const padX = 60;
+      const width = Math.max(220, text.length * charW + padX * 2);
+      const height = 130;
+      const rx = height / 2;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;display=swap');
+      .t { font-family: 'Caveat', 'Comic Sans MS', cursive; font-weight: 700; font-size: 80px; fill: #ffffff; }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
+</svg>`;
+      // URL-encode the SVG so it works as a data URI in Shotstack
+      const encoded = encodeURIComponent(svg)
+        .replace(/'/g, "%27")
+        .replace(/"/g, "%22");
+      return `data:image/svg+xml;charset=utf-8,${encoded}`;
+    };
+
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
           overlayClips.push({
             asset: {
-              type: "title",
-              text: `Day ${dayNum}`,
-              style: "chunk",
-              color: "#ffffff",
-              background: "#e67e22",
-              size: "medium",
+              type: "image",
+              src: buildBadgeSvg(dayNum),
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
             position: "bottom",
             offset: { y: 0.2 },
+            fit: "none",
+            scale: 1,
           });
         }
       });

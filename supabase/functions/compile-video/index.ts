@@ -68,15 +68,15 @@ Deno.serve(async (req) => {
           overlayClips.push({
             asset: {
               type: 'html',
-              html: `<div class="wrap"><div class="badge">Day ${dayNum}</div></div>`,
-              css: `.wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; } .badge { font-family: 'Caveat', 'Comic Sans MS', cursive; font-weight: 700; font-size: 36px; color: #fff; background: #e67e22; padding: 6px 24px; border-radius: 999px; text-align: center; line-height: 1; }`,
-              width: 200,
-              height: 60,
+              html: `<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet"><div class="badge">Day ${dayNum}</div>`,
+              css: `*{margin:0;padding:0;box-sizing:border-box;} html,body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:transparent;} .badge{font-family:'Caveat',cursive;font-weight:700;font-size:44px;color:#ffffff;background:#e67e22;padding:8px 28px;border-radius:999px;line-height:1;display:inline-block;white-space:nowrap;}`,
+              width: 240,
+              height: 80,
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
             position: 'bottom',
-            offset: { y: 0.28 },
+            offset: { y: 0.32 },
           });
         }
       });

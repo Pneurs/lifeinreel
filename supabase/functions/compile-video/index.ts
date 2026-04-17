@@ -59,24 +59,23 @@ Deno.serve(async (req) => {
     }));
 
     // Build overlay track for day labels
+    // Use @font-face with declared font in timeline.fonts for reliable Google Font loading
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
-          // Use HTML asset for custom styling with padding and rounded corners
-          // NOTE: position/offset belong on the clip, NOT on the asset
           overlayClips.push({
             asset: {
               type: 'html',
-              html: `<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet"><div class="badge">Day ${dayNum}</div>`,
-              css: `*{margin:0;padding:0;box-sizing:border-box;} html,body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:transparent;} .badge{font-family:'Caveat',cursive;font-weight:700;font-size:44px;color:#ffffff;background:#e67e22;padding:8px 28px;border-radius:999px;line-height:1;display:inline-block;white-space:nowrap;}`,
+              html: `<div class="badge">Day ${dayNum}</div>`,
+              css: `@font-face{font-family:'Caveat';src:url('https://fonts.gstatic.com/s/caveat/v18/WnznHAc5bAfYB2QRah7pcpNvOx-pjcB9eIWpZTPNbeg.woff2') format('woff2');font-weight:700;font-style:normal;} *{margin:0;padding:0;box-sizing:border-box;} html,body{width:100%;height:100%;background:transparent;} body{display:flex;align-items:center;justify-content:center;} .badge{font-family:'Caveat',cursive;font-weight:700;font-size:44px;color:#ffffff;background:#e67e22;padding:6px 28px 10px;border-radius:999px;line-height:1;white-space:nowrap;}`,
               width: 240,
               height: 80,
             },
             start: i * CLIP_DURATION,
             length: CLIP_DURATION,
             position: 'bottom',
-            offset: { y: 0.32 },
+            offset: { y: 0.38 },
           });
         }
       });

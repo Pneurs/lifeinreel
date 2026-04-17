@@ -8,8 +8,6 @@ const corsHeaders = {
 
 const SHOTSTACK_ENV = Deno.env.get("SHOTSTACK_ENV") || "stage";
 const SHOTSTACK_BASE = `https://api.shotstack.io/${SHOTSTACK_ENV}`;
-const DAY_BADGE_FONT_URL =
-  "https://fonts.gstatic.com/s/caveat/v23/WnznHAc5bAfYB2QRah7pcpNvOx-pjRV6SII.ttf";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,7 +60,6 @@ Deno.serve(async (req) => {
     // Build Shotstack timeline
     const CLIP_DURATION = 2;
     const OUTPUT_SIZE = { width: 720, height: 1280 };
-    const DAY_BADGE_BOTTOM_PADDING = 132;
     const totalDuration = clipUrls.length * CLIP_DURATION;
 
     const videoClips = clipUrls.map((url: string, i: number) => ({
@@ -71,38 +68,40 @@ Deno.serve(async (req) => {
       length: CLIP_DURATION,
     }));
 
-    // Build overlay track for day labels
+    // Build overlay track for day labels using native Shotstack title asset
+    // style: "chunk" renders a rounded pill background; offset.y: 0.2 lifts it
+    // ~20% of frame height above the bottom edge.
     const overlayClips: any[] = [];
     if (clipDayNumbers && Array.isArray(clipDayNumbers)) {
       clipDayNumbers.forEach((dayNum: number | null, i: number) => {
         if (dayNum != null) {
-            overlayClips.push({
-              asset: {
-                type: "html",
-                html:
-                  `<div class="frame"><div class="badge">Day ${dayNum}</div></div>`,
-                css:
-                  `@font-face{font-family:'DayBadge';src:url('${DAY_BADGE_FONT_URL}') format('truetype');font-weight:700;font-style:normal;}*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;background:transparent;overflow:hidden;}body{font-family:'DayBadge','Caveat','Brush Script MT','Comic Sans MS',cursive;}.frame{width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;padding:0 0 ${DAY_BADGE_BOTTOM_PADDING}px;}.badge{display:flex;align-items:center;justify-content:center;min-width:152px;padding:10px 22px 12px;border-radius:9999px;background:#e67e22;color:#ffffff;font-family:'DayBadge','Caveat','Brush Script MT','Comic Sans MS',cursive;font-weight:700;font-size:40px;line-height:1;text-align:center;white-space:nowrap;}`,
-                width: OUTPUT_SIZE.width,
-                height: OUTPUT_SIZE.height,
-              },
-              start: i * CLIP_DURATION,
-              length: CLIP_DURATION,
-              position: "center",
-            });
+          overlayClips.push({
+            asset: {
+              type: "title",
+              text: `Day ${dayNum}`,
+              style: "chunk",
+              color: "#ffffff",
+              background: "#e67e22",
+              size: "medium",
+              font: "Permanent Marker",
+            },
+            start: i * CLIP_DURATION,
+            length: CLIP_DURATION,
+            position: "bottom",
+            offset: { y: 0.2 },
+          });
         }
       });
     }
 
-    const tracks: any[] = [{ clips: videoClips }];
+    // Overlay track must come BEFORE video track so it renders on top
+    const tracks: any[] = [];
     if (overlayClips.length > 0) {
       tracks.push({ clips: overlayClips });
     }
+    tracks.push({ clips: videoClips });
 
     const timeline: any = { tracks };
-    if (overlayClips.length > 0) {
-      timeline.fonts = [{ src: DAY_BADGE_FONT_URL }];
-    }
 
     // Add soundtrack if provided
     // Use audio track clips for looping support (repeats when video > track length)

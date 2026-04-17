@@ -73,20 +73,21 @@ Deno.serve(async (req) => {
     // public `compilations` bucket and reference it by https URL.
     const buildBadgeSvg = (dayNum: number): string => {
       const text = `Day ${dayNum}`;
-      const charW = 38;
-      const padX = 60;
-      const width = Math.max(220, text.length * charW + padX * 2);
-      const height = 130;
+      const fontSize = 110;
+      const charW = fontSize * 0.55;
+      const padX = 36;
+      const height = 150;
+      const width = Math.max(180, Math.round(text.length * charW + padX * 2));
       const rx = height / 2;
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&amp;display=swap');
-      .t { font-family: 'Caveat', 'Comic Sans MS', cursive; font-weight: 700; font-size: 80px; fill: #ffffff; }
+      .t { font-family: 'Caveat', 'Comic Sans MS', cursive; font-weight: 700; font-size: ${fontSize}px; fill: #ffffff; }
     </style>
   </defs>
   <rect x="0" y="0" width="${width}" height="${height}" rx="${rx}" ry="${rx}" fill="#e67e22"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
+  <text x="50%" y="52%" text-anchor="middle" dominant-baseline="central" class="t">${text}</text>
 </svg>`;
     };
 

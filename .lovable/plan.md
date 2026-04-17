@@ -1,32 +1,56 @@
 
 
-The user can't tap filter options in the FilterStrip on the post-record preview. Let me analyze the code to find the issue.
+## Goal
+Make the "Day X" badge actually appear in compiled videos, positioned at 20% above the bottom edge, with a rounded pill background, centered text, and a handwritten font.
 
-Looking at `src/pages/Record.tsx`:
-- The preview screen renders a `<video controls>` with `flex-1` taking most space
-- Below it is the FilterStrip
-- The whole thing is inside `absolute inset-0` container
-- BUT — the bottom controls (`pb-12 px-6 z-10`) are also `absolute bottom-0 left-0 right-0` — these overlap the FilterStrip!
+## Why it keeps failing
+The current Shotstack overlay uses an HTML asset with a custom `@font-face` and full-frame layout. Multiple things are likely going wrong at once:
+1. Shotstack's `html` asset rendering can ignore `position: "center"` combined with full-frame `width/height` (likely why "no badge appears at all").
+2. Custom Google `.ttf`/`.woff2` URLs are inconsistent inside Shotstack's headless renderer — the font silently falls back, and if the rest of the layout fails too, nothing renders.
+3. The `timeline.fonts` array expects a specific format Shotstack accepts; an unsupported URL silently drops the asset.
 
-The bottom controls section contains the Save/Retake buttons positioned absolutely at the bottom with `pb-12`. The FilterStrip is inside the flex column of the preview area, so it sits at the bottom of that column — exactly where the absolute bottom controls overlay it. The bottom controls have `z-10` while the FilterStrip's container doesn't have an explicit z-index, so the controls intercept all taps on the filter buttons.
+## New approach (compiled only — keep saved clips clean)
 
-Also the `<video controls>` shows native controls which can also cover the strip on some browsers.
+Switch from a custom HTML asset to Shotstack's **native `title` asset**, which is the supported, documented way to put text on a clip. It is far more reliable and supports a curated set of fonts, sizes, backgrounds, and offsets.
 
-**Fix plan:**
+### Edge function changes — `supabase/functions/compile-video/index.ts`
 
-1. **Restructure the preview layout** in `src/pages/Record.tsx` so the FilterStrip sits ABOVE the bottom action buttons (Retake/Save), not underneath them. Specifically:
-   - Move the FilterStrip out of the absolute video container and place it inside the bottom controls area, positioned above the Retake/Save row when `hasRecorded` is true.
-   - OR add bottom padding to the preview flex container equal to the bottom controls height, and bump the FilterStrip's z-index to `z-20` so it sits above the action row but doesn't visually collide.
+1. Replace the `html` overlay with a `title` asset:
+   ```
+   asset: {
+     type: "title",
+     text: `Day ${dayNum}`,
+     style: "chunk",          // pill-shaped chunk style with background
+     color: "#ffffff",
+     background: "#e67e22",   // orange pill
+     size: "medium",
+     font: "Permanent Marker" // handwritten-style font supported by Shotstack natively
+   }
+   ```
+   `style: "chunk"` natively renders rounded pill text — no CSS, no font URLs, no clipping.
 
-   Cleanest approach: render the FilterStrip inside the bottom controls block (above the Retake/Save row) so they're naturally stacked and tappable.
+2. Position it 20% above the bottom:
+   ```
+   position: "bottom",
+   offset: { y: 0.2 }
+   ```
+   In Shotstack, `offset.y: 0.2` with `position: "bottom"` moves the asset up 20% of the frame height — exactly what was requested.
 
-2. **Remove `controls` from the preview `<video>`** — the native control bar overlaps the bottom of the video and can intercept touches near the FilterStrip. The clip is short (2s) and auto-loops; native controls aren't needed.
+3. Remove the `timeline.fonts` block and the `DAY_BADGE_FONT_URL` constant — no longer needed since "chunk" + a built-in Shotstack font handles everything.
 
-3. **Ensure the preview video container leaves room** — change the preview video to not consume `flex-1` all the way to the bottom; cap its height so the FilterStrip + action buttons have dedicated tappable space.
+4. Keep one overlay clip per video clip aligned by `start` / `length` (unchanged).
 
-### Files to change
+### No client changes
+- `clipDayNumbers` is already sent correctly from `Compile.tsx`.
+- Per-journey `showDayNumbers` toggle keeps working as-is.
+- Saved clips on disk stay untouched (per "Compiled only" choice).
 
-- **`src/pages/Record.tsx`** — restructure the `hasRecorded && previewUrl` block: keep the preview header + video in the upper area, move the FilterStrip into the bottom controls section (rendered above the Retake/Save row only when `hasRecorded`), remove `controls` from the preview video, and add appropriate bottom padding to avoid overlap.
+### Verification path
+After the edge function deploys:
+1. Run a small compilation (2–3 clips) from a journey that has `showDayNumbers = true`.
+2. Confirm the orange pill badge appears centered horizontally, ~20% above the bottom, with handwritten "Day N" text on every clip.
+3. If the chosen handwritten font ever falls back, swap to another Shotstack-supported handwritten font (e.g. `"Caveat Brush"`, `"Shadows Into Light"`) — single-line change.
 
-No other files need changes. FilterStrip itself is fine — its buttons already have `type="button"` and proper handlers.
+### Files touched
+- `supabase/functions/compile-video/index.ts` (only file edited; redeployed automatically)
 

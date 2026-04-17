@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { Download, Share2, BookmarkPlus, X, Instagram, Music2 } from 'lucide-react';
+import React from 'react';
+import { Download, Share2, BookmarkPlus, Instagram, Facebook, Music2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { IOSButton } from '@/components/ui/ios-button';
-import { toast } from 'sonner';
+import {
+  shareNative,
+  shareToInstagram,
+  shareToFacebook,
+  shareToTikTok,
+  downloadVideo,
+} from '@/lib/share';
 
 interface CompilationResultSheetProps {
   open: boolean;
@@ -23,49 +29,9 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
   isSaving,
   isSaved,
 }) => {
-  const handleDownload = () => {
-    if (!videoUrl) return;
-    const a = document.createElement('a');
-    a.href = videoUrl;
-    a.download = `compilation-${Date.now()}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success('Video downloaded!');
-  };
-
-  const handleShare = async (platform?: string) => {
-    if (!videoBlob || !videoUrl) return;
-
-    // Try native share API first
-    if (navigator.share && navigator.canShare) {
-      try {
-        const file = new File([videoBlob], 'compilation.mp4', { type: 'video/mp4' });
-        const shareData = { files: [file], title: 'My Compilation' };
-        
-        if (navigator.canShare(shareData)) {
-          await navigator.share(shareData);
-          toast.success('Shared successfully!');
-          return;
-        }
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-      }
-    }
-
-    // Fallback: copy URL or download
-    if (platform === 'instagram') {
-      // Instagram doesn't have a direct share URL, download first
-      handleDownload();
-      toast.info('Video downloaded. Open Instagram to share it.');
-    } else if (platform === 'tiktok') {
-      handleDownload();
-      toast.info('Video downloaded. Open TikTok to upload it.');
-    } else {
-      handleDownload();
-      toast.info('Video downloaded. Share it from your device.');
-    }
-  };
+  const shareOpts = videoUrl
+    ? { title: `compilation-${Date.now()}`, videoUrl, videoBlob }
+    : null;
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -74,7 +40,6 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
           <SheetTitle className="text-foreground">Your Video is Ready!</SheetTitle>
         </SheetHeader>
 
-        {/* Preview */}
         {videoUrl && (
           <div className="rounded-2xl overflow-hidden bg-muted mb-6 aspect-[9/16] max-h-[50vh] mx-auto">
             <video
@@ -86,9 +51,7 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
           </div>
         )}
 
-        {/* Actions */}
         <div className="space-y-3">
-          {/* Save to App */}
           <IOSButton
             variant="primary"
             fullWidth
@@ -103,18 +66,22 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
             {isSaved ? 'Saved to Reels' : 'Save to Reels'}
           </IOSButton>
 
-          {/* Download */}
-          <IOSButton variant="outline" fullWidth onClick={handleDownload}>
+          <IOSButton
+            variant="outline"
+            fullWidth
+            onClick={() => shareOpts && downloadVideo(shareOpts)}
+            disabled={!shareOpts}
+          >
             <Download className="w-5 h-5" />
             Download to Phone
           </IOSButton>
 
-          {/* Share to Social */}
-          <div className="flex gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <IOSButton
               variant="soft"
               fullWidth
-              onClick={() => handleShare('instagram')}
+              onClick={() => shareOpts && shareToInstagram(shareOpts)}
+              disabled={!shareOpts}
             >
               <Instagram className="w-5 h-5" />
               Instagram
@@ -122,18 +89,28 @@ export const CompilationResultSheet: React.FC<CompilationResultSheetProps> = ({
             <IOSButton
               variant="soft"
               fullWidth
-              onClick={() => handleShare('tiktok')}
+              onClick={() => shareOpts && shareToFacebook(shareOpts)}
+              disabled={!shareOpts}
+            >
+              <Facebook className="w-5 h-5" />
+              Facebook
+            </IOSButton>
+            <IOSButton
+              variant="soft"
+              fullWidth
+              onClick={() => shareOpts && shareToTikTok(shareOpts)}
+              disabled={!shareOpts}
             >
               <Music2 className="w-5 h-5" />
               TikTok
             </IOSButton>
           </div>
 
-          {/* General Share */}
           <IOSButton
             variant="ghost"
             fullWidth
-            onClick={() => handleShare()}
+            onClick={() => shareOpts && shareNative(shareOpts)}
+            disabled={!shareOpts}
           >
             <Share2 className="w-5 h-5" />
             More Sharing Options

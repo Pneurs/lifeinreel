@@ -195,6 +195,15 @@ const Compile: React.FC = () => {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
+
+          {!isPremium && (
+            <button
+              onClick={() => navigate('/paywall')}
+              className="mt-3 w-full text-xs text-left px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-primary"
+            >
+              Free plan: {compilationsThisMonth}/{FREE_COMPILATIONS_PER_MONTH} compilations this month · Tap to upgrade
+            </button>
+          )}
         </div>
 
         {/* Music Picker */}

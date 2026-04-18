@@ -97,15 +97,18 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Premium banner */}
-        <div className="bg-gradient-to-r from-primary to-chart-4 rounded-2xl p-4 mb-8 flex items-center gap-4">
+        <button
+          onClick={() => navigate('/paywall')}
+          className="w-full bg-gradient-to-r from-primary to-chart-4 rounded-2xl p-4 mb-8 flex items-center gap-4 active:scale-[0.98] transition-transform"
+        >
           <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
             <Crown className="w-6 h-6 text-accent" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 text-left">
             <p className="font-semibold text-primary-foreground">Go Premium</p>
             <p className="text-sm text-primary-foreground/80">Unlock unlimited journeys</p>
           </div>
-        </div>
+        </button>
 
         {/* Draft videos */}
         <DraftsSection />

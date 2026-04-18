@@ -59,7 +59,8 @@ const journeyTypes = [
 const NewJourney: React.FC = () => {
   const navigate = useNavigate();
   const { addJourney } = useJourneys();
-  
+  const { canCreateJourney, loading: limitsLoading } = useFreeTierLimits();
+
   const [selectedType, setSelectedType] = useState<JourneyType | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -68,6 +69,14 @@ const NewJourney: React.FC = () => {
   const [showDayNumbers, setShowDayNumbers] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect to paywall if free user has hit journey limit
+  useEffect(() => {
+    if (!limitsLoading && !canCreateJourney) {
+      toast.error(`Free plan: ${FREE_JOURNEY_LIMIT} journey limit. Upgrade for unlimited.`);
+      navigate('/paywall', { replace: true });
+    }
+  }, [canCreateJourney, limitsLoading, navigate]);
 
   const handleCreate = async () => {
     if (!selectedType || !name.trim() || isSubmitting) return;

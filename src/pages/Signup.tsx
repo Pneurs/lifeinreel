@@ -54,9 +54,9 @@ const Signup: React.FC = () => {
     } else {
       toast({
         title: 'Account created!',
-        description: 'Welcome to Moments. Start capturing your journey.',
+        description: 'Welcome to LifeShots. Start capturing your journey.',
       });
-      navigate('/home');
+      navigate('/paywall', { state: { fromSignup: true } });
     }
   };
 

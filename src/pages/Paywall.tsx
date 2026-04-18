@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Crown, Check, X, Sparkles, Infinity as InfinityIcon, Music } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { usePremium } from '@/hooks/usePremium';
@@ -21,6 +21,8 @@ const PLANS = [
 
 const Paywall: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromSignup = (location.state as { fromSignup?: boolean } | null)?.fromSignup === true;
   const { isPremium } = usePremium();
   const [selected, setSelected] = React.useState<string>('yearly');
 
@@ -30,6 +32,14 @@ const Paywall: React.FC = () => {
       navigate('/profile');
     }
   }, [isPremium, navigate]);
+
+  const handleClose = () => {
+    if (fromSignup) {
+      navigate('/home', { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handlePurchase = () => {
     // Native purchase will be wired via RevenueCat SDK in the Capacitor build.
@@ -42,7 +52,7 @@ const Paywall: React.FC = () => {
       <div className="relative min-h-screen bg-gradient-to-b from-primary/10 via-background to-background">
         {/* Close */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center"
           aria-label="Close paywall"
         >
@@ -111,6 +121,14 @@ const Paywall: React.FC = () => {
           >
             Continue
           </button>
+          {fromSignup && (
+            <button
+              onClick={handleClose}
+              className="w-full mt-3 py-3 text-sm font-medium text-muted-foreground"
+            >
+              Maybe later — start with the free plan
+            </button>
+          )}
           <p className="text-xs text-center text-muted-foreground mt-3">
             Cancel anytime. Restore purchases available in settings.
           </p>

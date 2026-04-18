@@ -7,21 +7,52 @@ import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const slides = [
+type Slide = {
+  icon: React.ComponentType<{ className?: string }>;
+  headline: string;
+  subheadline: string;
+  body: string[];
+  cta: string;
+  footnote: string;
+  emotional?: string[];
+};
+
+const slides: Slide[] = [
   {
     icon: Sparkles,
-    title: 'Every moment matters',
-    description: 'Capture 1–2 second clips daily and watch your journey unfold into something beautiful.',
-  },
-  {
-    icon: Camera,
-    title: 'Simple daily ritual',
-    description: "Just one quick clip a day. That's all it takes to document life's precious moments.",
+    headline: 'Most People Forget 90% of Their Year.',
+    subheadline: "The best moments aren't planned.\nThey're lived.",
+    body: [
+      'Capture 4 seconds a day.',
+      'At the end of the month, relive everything in one beautiful reel.',
+    ],
+    cta: 'Start Before This Month Ends',
+    footnote: 'Your future self will thank you.',
   },
   {
     icon: Film,
-    title: 'Stories come alive',
-    description: 'Weekly, monthly, and yearly videos are created automatically from your highlights.',
+    headline: 'Turn Everyday Moments Into Timeless Films',
+    subheadline: 'Your life deserves more than disappearing stories.',
+    body: [
+      'Record 4 seconds daily.',
+      'We craft your monthly memory movie — with music, emotion, and magic.',
+    ],
+    cta: 'Unlock My Memory Film',
+    footnote: 'Private. Secure. Yours forever.',
+  },
+  {
+    icon: Camera,
+    headline: "Your Life Is Happening. Don't Let It Disappear.",
+    subheadline: 'Record just 4 seconds a day.\nWe turn it into a beautiful monthly memory film — automatically.',
+    body: [],
+    emotional: [
+      'One day your baby will grow up.',
+      'That trip will become a memory.',
+      'That moment will never come back.',
+      'But this time… you kept it.',
+    ],
+    cta: 'Start My Memory Journey',
+    footnote: '',
   },
 ];
 
@@ -86,15 +117,33 @@ const Onboarding: React.FC = () => {
                 return (
                   <div key={index} className="min-w-0 shrink-0 grow-0 basis-full">
                     <div className="flex flex-col items-center justify-center text-center px-2">
-                      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8">
-                        <Icon className="w-12 h-12 text-primary" />
+                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <Icon className="w-10 h-10 text-primary" />
                       </div>
-                      <h1 className="text-3xl font-bold text-foreground mb-4">
-                        {slide.title}
+                      <h1 className="text-[26px] leading-tight font-bold text-foreground mb-4 max-w-xs">
+                        {slide.headline}
                       </h1>
-                      <p className="text-lg text-muted-foreground max-w-xs leading-relaxed">
-                        {slide.description}
+                      <p className="text-base text-muted-foreground max-w-xs leading-relaxed whitespace-pre-line mb-4">
+                        {slide.subheadline}
                       </p>
+                      {slide.body.length > 0 && (
+                        <div className="space-y-1 max-w-xs mb-4">
+                          {slide.body.map((line, i) => (
+                            <p key={i} className="text-sm text-foreground/80 leading-relaxed">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {slide.emotional && (
+                        <div className="space-y-2 max-w-xs mt-2 font-[Caveat,cursive] text-xl text-foreground/90">
+                          {slide.emotional.map((line, i) => (
+                            <p key={i} className="leading-snug">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -104,7 +153,7 @@ const Onboarding: React.FC = () => {
         </div>
 
         {/* Dots and button */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-center gap-2">
             {slides.map((_, index) => (
               <button
@@ -126,8 +175,14 @@ const Onboarding: React.FC = () => {
             size="lg"
             fullWidth
           >
-            {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
+            {slides[currentSlide].cta}
           </IOSButton>
+
+          {slides[currentSlide].footnote && (
+            <p className="text-center text-xs text-muted-foreground">
+              {slides[currentSlide].footnote}
+            </p>
+          )}
         </div>
       </div>
     </div>

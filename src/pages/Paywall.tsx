@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Crown, Check, X, Sparkles, Infinity as InfinityIcon, Music } from 'lucide-react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { usePremium } from '@/hooks/usePremium';

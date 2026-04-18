@@ -64,6 +64,12 @@ const Compile: React.FC = () => {
       return;
     }
 
+    if (!canCreateCompilation) {
+      toast.error(`Free plan: ${FREE_COMPILATIONS_PER_MONTH} compilations/month limit. Upgrade for unlimited.`);
+      navigate('/paywall');
+      return;
+    }
+
     const journeyName = selectedJourneyId !== 'all'
       ? journeys.find(j => j.id === selectedJourneyId)?.name
       : undefined;

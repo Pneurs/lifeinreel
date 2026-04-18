@@ -181,6 +181,8 @@ export const useLocalNotifications = (userId: string | undefined) => {
         });
       }
     });
+
+    if (notifications.length > 0) {
       await LocalNotifications.schedule({ notifications });
       console.log(`Scheduled ${notifications.length} local notifications`);
     }

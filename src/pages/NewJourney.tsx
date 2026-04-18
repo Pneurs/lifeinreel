@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Baby, Dumbbell, Heart, Plane, Target } from 'lucide-react';
+import { toast } from 'sonner';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { IOSButton } from '@/components/ui/ios-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useJourneys } from '@/hooks/useJourneys';
+import { useFreeTierLimits, FREE_JOURNEY_LIMIT } from '@/hooks/useFreeTierLimits';
 import { JourneyType } from '@/types/journey';
 import { cn } from '@/lib/utils';
 import { JourneyPhotoUpload } from '@/components/journey/JourneyPhotoUpload';

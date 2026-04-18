@@ -117,15 +117,33 @@ const Onboarding: React.FC = () => {
                 return (
                   <div key={index} className="min-w-0 shrink-0 grow-0 basis-full">
                     <div className="flex flex-col items-center justify-center text-center px-2">
-                      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8">
-                        <Icon className="w-12 h-12 text-primary" />
+                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                        <Icon className="w-10 h-10 text-primary" />
                       </div>
-                      <h1 className="text-3xl font-bold text-foreground mb-4">
-                        {slide.title}
+                      <h1 className="text-[26px] leading-tight font-bold text-foreground mb-4 max-w-xs">
+                        {slide.headline}
                       </h1>
-                      <p className="text-lg text-muted-foreground max-w-xs leading-relaxed">
-                        {slide.description}
+                      <p className="text-base text-muted-foreground max-w-xs leading-relaxed whitespace-pre-line mb-4">
+                        {slide.subheadline}
                       </p>
+                      {slide.body.length > 0 && (
+                        <div className="space-y-1 max-w-xs mb-4">
+                          {slide.body.map((line, i) => (
+                            <p key={i} className="text-sm text-foreground/80 leading-relaxed">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {slide.emotional && (
+                        <div className="space-y-2 max-w-xs mt-2 font-[Caveat,cursive] text-xl text-foreground/90">
+                          {slide.emotional.map((line, i) => (
+                            <p key={i} className="leading-snug">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -135,7 +153,7 @@ const Onboarding: React.FC = () => {
         </div>
 
         {/* Dots and button */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-center gap-2">
             {slides.map((_, index) => (
               <button
@@ -157,8 +175,14 @@ const Onboarding: React.FC = () => {
             size="lg"
             fullWidth
           >
-            {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
+            {slides[currentSlide].cta}
           </IOSButton>
+
+          {slides[currentSlide].footnote && (
+            <p className="text-center text-xs text-muted-foreground">
+              {slides[currentSlide].footnote}
+            </p>
+          )}
         </div>
       </div>
     </div>

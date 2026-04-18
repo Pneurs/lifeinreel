@@ -7,21 +7,52 @@ import { cn } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const slides = [
+type Slide = {
+  icon: React.ComponentType<{ className?: string }>;
+  headline: string;
+  subheadline: string;
+  body: string[];
+  cta: string;
+  footnote: string;
+  emotional?: string[];
+};
+
+const slides: Slide[] = [
   {
     icon: Sparkles,
-    title: 'Every moment matters',
-    description: 'Capture 1–2 second clips daily and watch your journey unfold into something beautiful.',
-  },
-  {
-    icon: Camera,
-    title: 'Simple daily ritual',
-    description: "Just one quick clip a day. That's all it takes to document life's precious moments.",
+    headline: 'Most People Forget 90% of Their Year.',
+    subheadline: "The best moments aren't planned.\nThey're lived.",
+    body: [
+      'Capture 4 seconds a day.',
+      'At the end of the month, relive everything in one beautiful reel.',
+    ],
+    cta: 'Start Before This Month Ends',
+    footnote: 'Your future self will thank you.',
   },
   {
     icon: Film,
-    title: 'Stories come alive',
-    description: 'Weekly, monthly, and yearly videos are created automatically from your highlights.',
+    headline: 'Turn Everyday Moments Into Timeless Films',
+    subheadline: 'Your life deserves more than disappearing stories.',
+    body: [
+      'Record 4 seconds daily.',
+      'We craft your monthly memory movie — with music, emotion, and magic.',
+    ],
+    cta: 'Unlock My Memory Film',
+    footnote: 'Private. Secure. Yours forever.',
+  },
+  {
+    icon: Camera,
+    headline: "Your Life Is Happening. Don't Let It Disappear.",
+    subheadline: 'Record just 4 seconds a day.\nWe turn it into a beautiful monthly memory film — automatically.',
+    body: [],
+    emotional: [
+      'One day your baby will grow up.',
+      'That trip will become a memory.',
+      'That moment will never come back.',
+      'But this time… you kept it.',
+    ],
+    cta: 'Start My Memory Journey',
+    footnote: '',
   },
 ];
 

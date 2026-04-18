@@ -65,6 +65,8 @@ const Profile: React.FC = () => {
     return localStorage.getItem('weeklyReminder') !== 'false';
   });
   const { user, signOut } = useAuth();
+  const { isPremium } = usePremium();
+  const { journeyCount, compilationsThisMonth } = useFreeTierLimits();
 
   const handleDailyToggle = (checked: boolean) => {
     setDailyReminder(checked);

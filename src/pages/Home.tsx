@@ -74,7 +74,7 @@ const Home: React.FC = () => {
               </div>
               <h3 className="font-semibold text-foreground mb-2">No journeys yet</h3>
               <p className="text-sm text-muted-foreground mb-6">Start capturing your first journey today</p>
-              <IOSButton onClick={() => navigate('/new-journey')} variant="primary">
+              <IOSButton onClick={handleNewJourney} variant="primary">
                 Create Journey
               </IOSButton>
             </div>

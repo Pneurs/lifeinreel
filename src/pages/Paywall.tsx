@@ -121,6 +121,14 @@ const Paywall: React.FC = () => {
           >
             Continue
           </button>
+          {fromSignup && (
+            <button
+              onClick={handleClose}
+              className="w-full mt-3 py-3 text-sm font-medium text-muted-foreground"
+            >
+              Maybe later — start with the free plan
+            </button>
+          )}
           <p className="text-xs text-center text-muted-foreground mt-3">
             Cancel anytime. Restore purchases available in settings.
           </p>

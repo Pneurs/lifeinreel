@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 const Compile: React.FC = () => {
   const navigate = useNavigate();
   const { journeys } = useJourneys();
+  const { canCreateCompilation, compilationsThisMonth, isPremium, refresh: refreshLimits } = useFreeTierLimits();
   
   // Filter state
   const [selectedJourneyId, setSelectedJourneyId] = useState<string>('all');

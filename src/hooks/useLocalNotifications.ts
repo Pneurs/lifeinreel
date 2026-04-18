@@ -7,6 +7,14 @@ import { Capacitor } from '@capacitor/core';
 const DAILY_BASE_ID = 1000; // 1000+ for daily per-journey
 const WEEKLY_NOTIFICATION_ID = 900;
 const MONTHLY_NOTIFICATION_BASE_ID = 2000;
+const MILESTONE_BASE_ID = 3000; // 3000+ clip-count milestones (5/10/25)
+const INACTIVITY_BASE_ID = 4000; // 4000+ inactivity re-engagement nudges
+
+// Clip-count milestones that trigger "ready for a reel!" prompts
+const CLIP_MILESTONES = [5, 10, 25];
+
+// Days of inactivity before sending a re-engagement nudge
+const INACTIVITY_DAYS = 3;
 
 const DAILY_MESSAGES = [
   (name: string) => `Don't miss ${name} today — it only takes 1 second to capture your life 🎬`,

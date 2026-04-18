@@ -21,6 +21,8 @@ const PLANS = [
 
 const Paywall: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromSignup = (location.state as { fromSignup?: boolean } | null)?.fromSignup === true;
   const { isPremium } = usePremium();
   const [selected, setSelected] = React.useState<string>('yearly');
 
@@ -30,6 +32,14 @@ const Paywall: React.FC = () => {
       navigate('/profile');
     }
   }, [isPremium, navigate]);
+
+  const handleClose = () => {
+    if (fromSignup) {
+      navigate('/home', { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handlePurchase = () => {
     // Native purchase will be wired via RevenueCat SDK in the Capacitor build.

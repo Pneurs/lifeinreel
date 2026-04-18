@@ -57,11 +57,11 @@ export const useLocalNotifications = (userId: string | undefined) => {
     const notifications: ScheduleOptions['notifications'] = [];
 
     // Fetch journeys for personalized notifications
-    let journeys: { id: string; name: string; clip_count: number }[] = [];
+    let journeys: { id: string; name: string; clip_count: number; last_capture_date: string | null }[] = [];
     try {
       const { data } = await supabase
         .from('journeys')
-        .select('id, name, clip_count')
+        .select('id, name, clip_count, last_capture_date')
         .eq('user_id', userId);
       if (data) journeys = data;
     } catch (err) {

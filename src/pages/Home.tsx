@@ -34,7 +34,7 @@ const Home: React.FC = () => {
           title="My Journeys"
           rightSlot={
             <button
-              onClick={() => navigate('/new-journey')}
+              onClick={handleNewJourney}
               className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
               aria-label="New journey"
             >

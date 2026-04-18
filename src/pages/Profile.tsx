@@ -15,6 +15,8 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import DraftsSection from '@/components/profile/DraftsSection';
+import { usePremium } from '@/hooks/usePremium';
+import { useFreeTierLimits, FREE_JOURNEY_LIMIT, FREE_COMPILATIONS_PER_MONTH } from '@/hooks/useFreeTierLimits';
 
 interface SettingItemProps {
   icon: React.ElementType;

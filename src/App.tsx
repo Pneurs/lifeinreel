@@ -21,6 +21,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Timeline = lazy(() => import("./pages/Timeline"));
 const Reels = lazy(() => import("./pages/Reels"));
 const Compile = lazy(() => import("./pages/Compile"));
+const Paywall = lazy(() => import("./pages/Paywall"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -94,6 +95,11 @@ const App = () => (
               <Route path="/compile" element={
                 <ProtectedRoute>
                   <Compile />
+                </ProtectedRoute>
+              } />
+              <Route path="/paywall" element={
+                <ProtectedRoute>
+                  <Paywall />
                 </ProtectedRoute>
               } />
               

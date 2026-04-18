@@ -121,6 +121,7 @@ const Compile: React.FC = () => {
       if (result) {
         setIsSaved(true);
         toast.success('Saved to your Reels!');
+        refreshLimits();
       } else {
         toast.error('Failed to save. Please try again.');
       }

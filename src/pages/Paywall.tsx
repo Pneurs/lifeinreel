@@ -52,7 +52,7 @@ const Paywall: React.FC = () => {
       <div className="relative min-h-screen bg-gradient-to-b from-primary/10 via-background to-background">
         {/* Close */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center"
           aria-label="Close paywall"
         >

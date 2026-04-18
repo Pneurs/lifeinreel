@@ -100,7 +100,7 @@ const Profile: React.FC = () => {
           <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
 
-        {/* Premium banner */}
+        {/* Premium banner / usage */}
         <button
           onClick={() => navigate('/paywall')}
           className="w-full bg-gradient-to-r from-primary to-chart-4 rounded-2xl p-4 mb-8 flex items-center gap-4 active:scale-[0.98] transition-transform"
@@ -109,8 +109,19 @@ const Profile: React.FC = () => {
             <Crown className="w-6 h-6 text-accent" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-semibold text-primary-foreground">Go Premium</p>
-            <p className="text-sm text-primary-foreground/80">Unlock unlimited journeys</p>
+            {isPremium ? (
+              <>
+                <p className="font-semibold text-primary-foreground">Premium active</p>
+                <p className="text-sm text-primary-foreground/80">Unlimited journeys & compilations</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-primary-foreground">Go Premium</p>
+                <p className="text-sm text-primary-foreground/80">
+                  {journeyCount}/{FREE_JOURNEY_LIMIT} journey · {compilationsThisMonth}/{FREE_COMPILATIONS_PER_MONTH} reels this month
+                </p>
+              </>
+            )}
           </div>
         </button>
 

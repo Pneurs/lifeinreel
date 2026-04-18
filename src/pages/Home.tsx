@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -8,10 +9,21 @@ import { JourneyCard } from '@/components/journey/JourneyCard';
 import { IOSButton } from '@/components/ui/ios-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useJourneys } from '@/hooks/useJourneys';
+import { useFreeTierLimits, FREE_JOURNEY_LIMIT } from '@/hooks/useFreeTierLimits';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { journeys, loading } = useJourneys();
+  const { canCreateJourney, isPremium } = useFreeTierLimits();
+
+  const handleNewJourney = () => {
+    if (!canCreateJourney) {
+      toast.error(`Free plan: ${FREE_JOURNEY_LIMIT} journey limit. Upgrade for unlimited.`);
+      navigate('/paywall');
+      return;
+    }
+    navigate('/new-journey');
+  };
 
   return (
     <>
@@ -22,7 +34,7 @@ const Home: React.FC = () => {
           title="My Journeys"
           rightSlot={
             <button
-              onClick={() => navigate('/new-journey')}
+              onClick={handleNewJourney}
               className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
               aria-label="New journey"
             >
@@ -62,7 +74,7 @@ const Home: React.FC = () => {
               </div>
               <h3 className="font-semibold text-foreground mb-2">No journeys yet</h3>
               <p className="text-sm text-muted-foreground mb-6">Start capturing your first journey today</p>
-              <IOSButton onClick={() => navigate('/new-journey')} variant="primary">
+              <IOSButton onClick={handleNewJourney} variant="primary">
                 Create Journey
               </IOSButton>
             </div>

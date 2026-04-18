@@ -13,12 +13,14 @@ import { useJourneys } from '@/hooks/useJourneys';
 import { useCompileClips, TagFilter } from '@/hooks/useCompileClips';
 import { useCloudCompilation } from '@/hooks/useCloudCompilation';
 import { useCompilations } from '@/hooks/useCompilations';
+import { useFreeTierLimits, FREE_COMPILATIONS_PER_MONTH } from '@/hooks/useFreeTierLimits';
 import { Compilation } from '@/types/journey';
 import { toast } from 'sonner';
 
 const Compile: React.FC = () => {
   const navigate = useNavigate();
   const { journeys } = useJourneys();
+  const { canCreateCompilation, compilationsThisMonth, isPremium, refresh: refreshLimits } = useFreeTierLimits();
   
   // Filter state
   const [selectedJourneyId, setSelectedJourneyId] = useState<string>('all');
@@ -59,6 +61,12 @@ const Compile: React.FC = () => {
   const handleCompile = async () => {
     if (selectedClips.length === 0) {
       toast.error('Please select at least one clip');
+      return;
+    }
+
+    if (!canCreateCompilation) {
+      toast.error(`Free plan: ${FREE_COMPILATIONS_PER_MONTH} compilations/month limit. Upgrade for unlimited.`);
+      navigate('/paywall');
       return;
     }
 
@@ -113,6 +121,7 @@ const Compile: React.FC = () => {
       if (result) {
         setIsSaved(true);
         toast.success('Saved to your Reels!');
+        refreshLimits();
       } else {
         toast.error('Failed to save. Please try again.');
       }
@@ -186,6 +195,15 @@ const Compile: React.FC = () => {
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
           />
+
+          {!isPremium && (
+            <button
+              onClick={() => navigate('/paywall')}
+              className="mt-3 w-full text-xs text-left px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-primary"
+            >
+              Free plan: {compilationsThisMonth}/{FREE_COMPILATIONS_PER_MONTH} compilations this month · Tap to upgrade
+            </button>
+          )}
         </div>
 
         {/* Music Picker */}

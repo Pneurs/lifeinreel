@@ -204,26 +204,80 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_events: {
+        Row: {
+          created_at: string
+          environment: string | null
+          event_type: string
+          id: string
+          occurred_at: string
+          product_id: string | null
+          raw_event: Json
+          store: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          environment?: string | null
+          event_type: string
+          id?: string
+          occurred_at?: string
+          product_id?: string | null
+          raw_event: Json
+          store?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          environment?: string | null
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          product_id?: string | null
+          raw_event?: Json
+          store?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          active_product_id: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_premium: boolean
+          lifetime_purchase: boolean
+          premium_expires_at: string | null
+          premium_updated_at: string | null
+          revenuecat_customer_id: string | null
           updated_at: string
         }
         Insert: {
+          active_product_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          is_premium?: boolean
+          lifetime_purchase?: boolean
+          premium_expires_at?: string | null
+          premium_updated_at?: string | null
+          revenuecat_customer_id?: string | null
           updated_at?: string
         }
         Update: {
+          active_product_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_premium?: boolean
+          lifetime_purchase?: boolean
+          premium_expires_at?: string | null
+          premium_updated_at?: string | null
+          revenuecat_customer_id?: string | null
           updated_at?: string
         }
         Relationships: []
